@@ -284,6 +284,21 @@ router.get("/dashboard", verifyToken, async (req, res) => {
     email: user.email
   });
 });
+router.get("/by-email/:email", async (req, res) => {
+  try {
+    const email = req.params.email;
+
+    const institute = await Institute.findOne({ email: email });
+    if (!institute) {
+      return res.status(404).json({ message: "Institute not found" });
+    }
+
+    res.json(institute);
+  } catch (error) {
+    console.error("Error fetching institute by email:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 
 router.get("/logout", (req, res) => {

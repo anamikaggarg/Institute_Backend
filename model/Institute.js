@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const instituteSchema = new mongoose.Schema({
   instituteId: {
     type: String,
@@ -23,40 +22,43 @@ const instituteSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  alternatePhone: {
-    type: String
-  },
+  alternatePhone: String,
   city: {
     type: String,
     required: true
   },
-  address: {
-    type: String
-  },
+  address: String,
   registeredDate: {
     type: Date,
     default: Date.now
   },
-  numberOfStudents: {
-    type: Number
+  numberOfStudents: Number,
+  aadhaarNumber: String,
+  gstNumber: String,
+  courses: [String],
+  logo: String,
+
+ 
+  currentPlan: String,
+  planStatus: {
+    type: String,
+    
   },
-  aadhaarNumber: {
-    type: String
+  planStartDate: Date,
+  planEndDate: Date,
+  hasPurchasedPlanBefore: {
+    type: Boolean,
+    default: false
   },
-  gstNumber: {
-    type: String
-  },
-  courses: {
-    type: [String] 
-  },
-  logo: {
-    type: String 
-  },
+
   status: {
     type: String,
-    default: "pending" 
+    default: "pending"
   },
-   createdAt: { type: Date, default: Date.now },
-});
 
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
 module.exports = mongoose.model("Institute", instituteSchema);
