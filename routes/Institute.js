@@ -283,17 +283,30 @@ router.get("/dashboard", verifyToken, async (req, res) => {
     username: user.username,
     email: user.email
   });
-});
-router.get("/by-email/:email", async (req, res) => {
+});router.get("/by-email/:email", async (req, res) => {
   try {
     const email = req.params.email;
 
     const institute = await Institute.findOne({ email: email });
+
     if (!institute) {
       return res.status(404).json({ message: "Institute not found" });
     }
 
-    res.json(institute);
+    res.status(200).json({
+      instituteId: institute.instituteId,
+      name: institute.name,
+      email: institute.email,
+      contact: institute.contact,
+      city: institute.city,
+      currentPlan: institute.currentPlan,
+      planStatus: institute.planStatus,
+      planStartDate: institute.planStartDate,
+      planEndDate: institute.planEndDate,
+      customFeatures: institute.customFeatures, 
+      logo: institute.logo
+    });
+
   } catch (error) {
     console.error("Error fetching institute by email:", error);
     res.status(500).json({ message: "Server error" });

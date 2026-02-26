@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Bill = require("../model/Bill");
 const Plan = require("../model/Plans");
-const Institute = require("../model/Institute")
+const Institute = require("../model/Institute");
 
 router.post("/create-and-activate/:instituteId/:planId", async (req, res) => {
   try {
@@ -21,12 +21,10 @@ router.post("/create-and-activate/:instituteId/:planId", async (req, res) => {
     }
 
     const institute = await Institute.findOne({ instituteId });
-    console.log("Institute Found:", institute);
     if (!institute) {
       return res.status(404).json({ message: "Institute not found" });
     }
 
-   
     const selectedDiscount = plan.discounts?.find(
       (d) => d.duration === months
     );
@@ -47,7 +45,6 @@ router.post("/create-and-activate/:instituteId/:planId", async (req, res) => {
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + months);
 
- 
     const billing = await Bill.create({
       billId: "BILL-" + Date.now(),
       instituteId,
@@ -65,18 +62,34 @@ router.post("/create-and-activate/:instituteId/:planId", async (req, res) => {
       paymentStatus: "active"
     });
 
+
     institute.currentPlan = planId;
     institute.planStatus = "active";
     institute.planStartDate = startDate;
     institute.planEndDate = endDate;
     institute.hasPurchasedPlanBefore = true;
 
-    await institute.save();
    
+    institute.customFeatures = {
+      academic: {
+        studentInfo: true,
+        classrooms: true,
+        exam: true,
+        attendance: true,
+        timetable: true,
+      },
+      reports: {
+        studentsReport: true,
+        classroomActivity: true
+      },
+      administration: {
+        certificate: true,
+        idCard: true
+      }
+    };
 
+    await institute.save();
 
-
-    
     const formatDate = (date) =>
       new Date(date)
         .toLocaleString("en-GB", {
@@ -102,6 +115,7 @@ router.post("/create-and-activate/:instituteId/:planId", async (req, res) => {
     res.status(500).json({ message: "Checkout Failed" });
   }
 });
+
 router.get("/:instituteId", async (req, res) => {
   const { instituteId } = req.params;
   try {
@@ -112,4 +126,5 @@ router.get("/:instituteId", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch bills" });
   }
 });
+
 module.exports = router;

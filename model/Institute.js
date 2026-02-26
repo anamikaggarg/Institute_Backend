@@ -50,6 +50,23 @@ const instituteSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  customFeatures: {
+    academic: {
+      studentInfo: { type: Boolean, default: false },
+      classrooms: { type: Boolean, default: false },
+      exam: { type: Boolean, default: false },
+      attendance: { type: Boolean, default: false },
+      timetable: { type: Boolean, default: false },
+    },
+    reports: {
+      studentsReport: { type: Boolean, default: false },
+      classroomActivity: { type: Boolean, default: false }
+    },
+    administration: {
+      certificate: { type: Boolean, default: false },
+      idCard: { type: Boolean, default: false }
+    }
+  },
 
   status: {
     type: String,
