@@ -50,11 +50,4 @@ const studentSchema = new mongoose.Schema(
 );
 
 
-studentSchema.pre("save", function (next) {
-  if (!this.studentID) {
-    this.studentID = "STU" + Math.floor(100000 + Math.random() * 900000);
-  }
-  
-});
-
 module.exports = mongoose.model("Student", studentSchema);

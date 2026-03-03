@@ -19,7 +19,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-
 router.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
     const {
@@ -31,49 +30,76 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       course,
       instituteName,
       address,
-      status,
-    } = req.body;
+      status
+    } = req.body; 
 
-    if (!fullName || !email || !password || !dob || !instituteName) {
-      return res.status(400).json({
-        success: false,
-        message: "Required fields are missing",
+    const generateStudentId = async () => {
+      let uniqueId;
+      let exists = true;
+
+      while (exists) {
+        const randomNumber = Math.floor(10000 + Math.random() * 9000);
+        uniqueId = `STU-${randomNumber}`;
+
+        exists = await Student.findOne({ studentID: uniqueId });
+      }
+
+      return uniqueId;
+    };
+
+    const studentID = await generateStudentId();
+
+    const existingStudent = await Student.findOne({ email });
+
+    if (existingStudent) {
+      return res.status(409).json({
+        message: "Student already registered with this email"
       });
     }
 
-    
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const studentID = "STU-" + fullName.slice(0, 4) + "-" + Date.now();
-
-    const studentDoc = {
+    const newStudent = new Student({
       studentID,
       fullName,
       email,
-      password: hashedPassword, 
+      password: hashedPassword,
       dob,
-      contactNo: contactNo || "",
-      course: course || "",
+      contactNo,
+      course,
       instituteName,
-      address: address || "",
-      status: status || "Active",
-      profileImage: req.file ? req.file.filename : "",
-    };
+      address,
+      status,
+      profileImage: req.file ? req.file.filename : null
+    });
 
-    await Student.collection.insertOne(studentDoc);
+    await newStudent.save();
 
     res.status(201).json({
       success: true,
-      message: "Student registered successfully",
-      studentID,
+      message: "Student successfully registered",
+      student: {
+        studentID,
+        fullName,
+        email,
+        dob,
+        contactNo,
+        course,
+        instituteName,
+        address,
+        status,
+        profileImage: req.file ? req.file.filename : null
+      }
     });
-  } catch (err) {
-    console.error("REGISTER ERROR ", err);
+
+  } catch (error) {
+    console.error(error);
     res.status(500).json({
-      success: false,
+      error: error.message
     });
   }
 });
+
 
 
 router.post("/login", async (req, res) => {
