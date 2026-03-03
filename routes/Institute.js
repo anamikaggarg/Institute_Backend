@@ -178,29 +178,31 @@ router.get("/search/:instituteId", async (req, res) => {
   }
 });
 
-
 router.put("/updateInstitute/:instituteId", async (req, res) => {
   try {
-    const institute = await Institute.findOne({ instituteId: req.params.instituteId });
 
-    if (!institute) {
-      return res.status(404).send("Institute not found");
+    if (!req.body) {
+      return res.status(400).json({ message: "No data received" });
     }
 
-    institute.contact = req.body.contact || institute.contact;
-    institute.city = req.body.city || institute.city;
-    institute.address = req.body.address || institute.address;
-    institute.numberOfStudents =
-      req.body.numberOfStudents || institute.numberOfStudents;
+    const updatedInstitute = await Institute.findOneAndUpdate(
+      { instituteId: req.params.instituteId },
+      { $set: req.body }, 
+      { new: true }        
+    );
 
-    await institute.save();
+    if (!updatedInstitute) {
+      return res.status(404).json({ message: "Institute not found" });
+    }
 
     res.json({
-      message: "Institute updated successfully"
+      message: "Institute updated successfully",
+      data: updatedInstitute
     });
 
   } catch (error) {
-    res.status(500).send(error.message);
+    console.error("Update Error:", error);
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -280,7 +282,8 @@ router.get("/dashboard", verifyToken, async (req, res) => {
     username: user.username,
     email: user.email
   });
-});router.get("/by-email/:email", async (req, res) => {
+});
+router.get("/by-email/:email", async (req, res) => {
   try {
     const email = req.params.email;
 
@@ -312,17 +315,12 @@ router.get("/dashboard", verifyToken, async (req, res) => {
 
 router.post("/logout", (req, res) => {
   try {
-    // Session ya token clear
     res.clearCookie("token", {
       httpOnly: true,
       secure: true,
       sameSite: "none",
     });
-
-    // Agar session use kar rahe ho
     if (req.session) req.session.destroy(() => {});
-
-    // JSON response frontend ke liye
     res.status(200).json({
       success: true,
       message: "Logged out successfully",
