@@ -310,14 +310,26 @@ router.get("/dashboard", verifyToken, async (req, res) => {
   }
 });
 
+router.post("/logout", (req, res) => {
+  try {
+    // Session ya token clear
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
 
-router.get("/logout", (req, res) => {
-   res.clearCookie("token", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-  });       
-  res.redirect("/login");
+    // Agar session use kar rahe ho
+    if (req.session) req.session.destroy(() => {});
+
+    // JSON response frontend ke liye
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Logout failed" });
+  }
 });
-
 module.exports = router;
