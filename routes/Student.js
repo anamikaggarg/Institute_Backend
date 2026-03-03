@@ -153,16 +153,42 @@ router.post("/login", async (req, res) => {
 
 
 
-
-router.get("/all", async (req, res) => {
+router.get("/allStudents", async (req, res) => {
   try {
-    const students = await Student.find()
-      .select("-_id -password -__v")
-      .lean();
-    res.json({ message: "All students", students });
-  } catch (err) {
-    console.error("FETCH ERROR:", err);
-    res.status(500).json({ error: "Server error" });
+    const students = await Student.find();
+
+    if (students.length === 0) {
+      return res.status(404).json({
+        message: "No students found"
+      });
+    }
+
+    const studentData = students.map(student => ({
+      studentID: student.studentID,
+      fullName: student.fullName,
+      email: student.email,
+      dob: student.dob,
+      contactNo: student.contactNo,
+      course: student.course,
+      instituteName: student.instituteName,
+      address: student.address,
+      profileImage: student.profileImage,
+      role: student.role,
+      status: student.status,
+      createdAt: student.createdAt
+    }));
+
+    res.status(200).json({
+      message: "All students",
+      students: studentData
+    });
+
+  } catch (error) {
+    console.error("GET ALL STUDENTS ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 });
 
