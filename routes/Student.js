@@ -68,13 +68,9 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       studentID,
     });
   } catch (err) {
-    console.error("REGISTER ERROR 👉", err);
+    console.error("REGISTER ERROR ", err);
     res.status(500).json({
       success: false,
-      message:
-        err.code === 11000
-          ? "Email already exists"
-          : "Student registration failed",
     });
   }
 });
@@ -144,6 +140,38 @@ router.get("/all", async (req, res) => {
   }
 });
 
+router.put("/updateStudent/:studentID", async (req, res) => {
+  try {
+    const student = await Student.findOne({ studentID: req.params.studentID });
+
+    if (!student) {
+      return res.status(404).send("Student not found");
+    }
+    student.fullName = req.body.fullName || student.fullName;
+    student.email = req.body.email || student.email;
+    student.dob = req.body.dob || student.dob;
+    student.contactNo = req.body.contactNo || student.contactNo;
+    student.course = req.body.course || student.course;
+    student.instituteName = req.body.instituteName || student.instituteName;
+    student.address = req.body.address || student.address;
+    student.status = req.body.status || student.status;
+
+ 
+    if (req.body.password) {
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      student.password = hashedPassword;
+    }
+
+    await student.save();
+
+    res.json({
+      message: "Student updated successfully"
+    });
+
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
 
 
 module.exports = router;
