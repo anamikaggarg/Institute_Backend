@@ -19,6 +19,7 @@ const storage = multer.diskStorage({
 })
 const upload = multer({storage});
 
+
 router.post("/register",upload.single('logo'), async (req, res) => {
   try {
     const {
@@ -311,7 +312,11 @@ router.get("/dashboard", verifyToken, async (req, res) => {
 
 
 router.get("/logout", (req, res) => {
-  res.clearCookie("token");       
+   res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });       
   res.redirect("/login");
 });
 
