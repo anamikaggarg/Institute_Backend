@@ -358,6 +358,53 @@ router.get("/by-email/:email", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+router.post("/update-password", async (req, res) => {
+  try {
+
+    const { oldPassword, newPassword } = req.body;
+
+    const token = req.session.token;
+
+    if (!token) {
+      return res.status(401).json({ message: "Please login first" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const institute = await Institute.findOne({
+      instituteId: decoded.instituteId
+    });
+
+    if (!institute) {
+      return res.status(404).json({ message: "Institute not found" });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, institute.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Old password is incorrect"
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    institute.password = hashedPassword;
+
+    await institute.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully"
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Server error"
+    });
+  }
+});
 
 router.post("/logout", (req, res) => {
   try {
