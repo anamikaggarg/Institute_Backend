@@ -221,8 +221,6 @@ const verifyToken = (req,res,next) =>{
     next();
   })
 }
-
-
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -257,20 +255,68 @@ router.post("/login", async (req, res) => {
     );
 
     req.session.token = token;
-    console.log(token);
 
     res.status(200).json({
       message: "Login successfully",
       success: true,
+      token: token,
       institute: institute
     });
-   
-
 
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
+// router.post("/login", async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     const institute = await Institute.findOne({
+//       email: { $regex: `^${email}$`, $options: "i" }
+//     });
+
+//     if (!institute) {
+//       return res.status(404).json({
+//         message: "Institute not found",
+//         success: false,
+//         token
+//       });
+//     }
+
+//     const passwordMatch = await bcrypt.compare(password, institute.password);
+
+//     if (!passwordMatch) {
+//       return res.status(401).json({
+//         message: "Invalid password",
+//         success: false
+//       });
+//     }
+
+//     const token = jwt.sign(
+//       {
+//         instituteId: institute.instituteId,
+//         email: institute.email
+//       },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "1h" }
+//     );
+
+//     req.session.token = token;
+//     console.log(token);
+
+//     res.status(200).json({
+//       message: "Login successfully",
+//       success: true,
+//       institute: institute,
+//     });
+   
+
+
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
 
 
 
