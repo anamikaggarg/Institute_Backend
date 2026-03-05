@@ -364,10 +364,11 @@ router.post("/update-password", async (req, res) => {
     const { oldPassword, newPassword } = req.body;
 
     const token = req.session.token;
+    console.log(req.session);
 
-    if (!token) {
-      return res.status(401).json({ message: "Please login first" });
-    }
+    // if (!token) {
+    //   return res.status(401).json({ message: "Please login first" });
+    // }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
