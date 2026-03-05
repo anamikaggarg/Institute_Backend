@@ -361,19 +361,34 @@ router.get("/by-email/:email", async (req, res) => {
 
 router.post("/logout", (req, res) => {
   try {
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-    });
-    if (req.session) req.session.destroy(() => {});
-    res.status(200).json({
-      success: true,
-      message: "Logged out successfully",
+    if (!req.session) {
+      return res.status(200).json({
+        success: true,
+        message: "Already logged out"
+      });
+    }
+
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          message: "Logout failed"
+        });
+      }
+
+      res.clearCookie("connect.sid"); // session cookie
+
+      return res.status(200).json({
+        success: true,
+        message: "Logged out successfully"
+      });
     });
 
   } catch (error) {
-    res.status(500).json({ success: false, message: "Logout failed" });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 });
 module.exports = router;
