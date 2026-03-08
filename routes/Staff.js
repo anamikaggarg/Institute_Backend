@@ -5,43 +5,32 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 
-
 router.post("/addStaff", async (req, res) => {
   try {
 
-    const {
-      firstName,
-      lastName,
-      email,
-      phone,
-      role,
-      address,
-      subject,
-      classTeacher,
-      bloodGroup,
-      joiningDate
-    } = req.body;
-
-    const existingStaff = await Staff.findOne({ email });
-
-    if (existingStaff) {
-      return res.status(409).json({
-        message: "Staff already exists with this email"
-      });
-    }
+    console.log("BODY DATA:", req.body);
 
     const newStaff = new Staff({
-      firstName,
-      lastName,
-      email,
-      phone,
-      role,
-      address,
-      subject,
-      classTeacher,
-      bloodGroup,
-      joiningDate,
-      status: "Active"
+      InstituteId: req.body.InstituteId,
+      InstituteName: req.body.InstituteName,
+      ReferenceName: req.body.ReferenceName,
+      firstName: req.body.firstName,
+      LastName: req.body.LastName,
+      UserRole: req.body.UserRole,
+      ContactNumber: req.body.ContactNumber,
+      AadharNumber: req.body.AadharNumber,
+      PanNumber: req.body.PanNumber,
+      FathersName: req.body.FathersName,
+      MothersName: req.body.MothersName,
+      AppointmentDate: req.body.AppointmentDate,
+      HighestQualification: req.body.HighestQualification,
+      ESI: req.body.ESI,
+      Country: req.body.Country,
+      State: req.body.State,
+      Address: req.body.Address,
+      Gender: req.body.Gender,
+      BloodGroup: req.body.BloodGroup,
+      Dob: req.body.Dob
     });
 
     await newStaff.save();

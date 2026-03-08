@@ -4,102 +4,102 @@ const staffSchema = new mongoose.Schema({
 
   InstituteId: {
     type: String,
-    required: true
+    // required: true
   },
 
   InstituteName: {
     type: String,
-    required: true
+    // required: true
   },
 
   ReferenceName: {
     type: String,
-    required: true
+    // required: true
   },
 
   firstName: {
     type: String,
-    required: true
+    // required: true
   },
 
   LastName: {
     type: String,
-    required: true
+    // required: true
   },
 
   UserRole: {
     type: String,
-    required: true
+    // required: true
   },
 
   ContactNumber: {
     type: String,
-    required: true
+    // required: true
   },
 
   AadharNumber: {
     type: String,
-    required: true
+    // required: true
   },
 
   PanNumber: {
     type: String,
-    required: true
+    // required: true
   },
 
   FathersName: {
     type: String,
-    required: true
+    // required: true
   },
 
   MothersName: {
     type: String,
-    required: true
+    // required: true
   },
 
   AppointmentDate: {
     type: Date,
-    required: true
+    // required: true
   },
 
   HighestQualification: {
     type: String,
-    required: true
+    // required: true
   },
 
   ESI: {
     type: String,
-    required: true
+    // required: true
   },
 
   Country: {
     type: String,
-    required: true
+    // required: true
   },
 
   State: {
     type: String,
-    required: true
+    // required: true
   },
 
   Address: {
     type: String,
-    required: true
+    // required: true
   },
 
   Gender: {
     type: String,
-    required: true
+    // required: true
   },
 
   BloodGroup: {
     type: String,
-    required: true
+    // required: true
   },
 
   Dob: {
     type: Date,
-    required: true
+    // required: true
   },
 
   status: {

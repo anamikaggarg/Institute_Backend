@@ -34,7 +34,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://effie-uncandied-dumpily.ngrok-free.dev",
   "https://institute-backend-0ncp.onrender.com",
-   "https://project-frontend-lz4g.vercel.app",
+    "https://project-frontend-eqr4.vercel.app",
 ];
 
 app.use(
