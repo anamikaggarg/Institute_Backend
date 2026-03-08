@@ -1,0 +1,177 @@
+const express = require("express");
+const router = express.Router();
+const Staff = require("../model/Staff");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
+
+
+router.post("/addStaff", async (req, res) => {
+  try {
+
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      role,
+      address,
+      subject,
+      classTeacher,
+      bloodGroup,
+      joiningDate
+    } = req.body;
+
+    const existingStaff = await Staff.findOne({ email });
+
+    if (existingStaff) {
+      return res.status(409).json({
+        message: "Staff already exists with this email"
+      });
+    }
+
+    const newStaff = new Staff({
+      firstName,
+      lastName,
+      email,
+      phone,
+      role,
+      address,
+      subject,
+      classTeacher,
+      bloodGroup,
+      joiningDate,
+      status: "Active"
+    });
+
+    await newStaff.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Staff added successfully",
+      staff: newStaff
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
+
+
+
+router.get("/allStaff", async (req, res) => {
+  try {
+
+    const staff = await Staff.find();
+
+    if (staff.length === 0) {
+      return res.status(404).json({
+        message: "No staff found"
+      });
+    }
+
+    res.status(200).json({
+      message: "All staff",
+      staff
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
+
+
+
+router.get("/search/:email", async (req, res) => {
+  try {
+
+    const email = req.params.email;
+
+    const staff = await Staff.findOne({ email });
+
+    if (!staff) {
+      return res.status(404).json({
+        message: "Staff not found"
+      });
+    }
+
+    res.status(200).json({
+      message: "Staff found",
+      staff
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
+
+
+
+router.put("/updateStaff/:id", async (req, res) => {
+  try {
+
+    const updatedStaff = await Staff.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+
+    if (!updatedStaff) {
+      return res.status(404).json({
+        message: "Staff not found"
+      });
+    }
+
+    res.status(200).json({
+      message: "Staff updated successfully",
+      data: updatedStaff
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
+
+
+
+router.delete("/deleteStaff/:id", async (req, res) => {
+  try {
+
+    const deletedStaff = await Staff.findByIdAndDelete(req.params.id);
+
+    if (!deletedStaff) {
+      return res.status(404).json({
+        message: "Staff not found"
+      });
+    }
+
+    res.status(200).json({
+      message: "Staff deleted successfully"
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
+
+module.exports = router;

@@ -11,6 +11,9 @@ const InstReg = require("./routes/Institute")
 const plans = require("./routes/Plans");
 const Billing = require("./routes/Bill");
 const Student = require("./routes/Student")
+const staffRoutes = require("./routes/Staff");
+
+
 
 
 const port = process.env.PORT || 1234;
@@ -65,7 +68,8 @@ app.use("/Sadmin",Sadminrouter);
 app.use("/institute",InstReg);
 app.use("/plans",plans);
 app.use("/billing",Billing);
-app.use("/student",Student)
+app.use("/student",Student);
+app.use("/api/staff", staffRoutes);
 
 
 
