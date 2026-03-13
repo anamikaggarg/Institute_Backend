@@ -25,15 +25,18 @@ router.post("/create-and-activate/:instituteId/:planId", async (req, res) => {
       return res.status(404).json({ message: "Institute not found" });
     }
 
-    const selectedDiscount = plan.discounts?.find(
-      (d) => d.duration === months
-    );
+   const selectedDiscount = plan.discounts?.find(
+  (d) => d.duration === months
+);
 
-    const baseTotal = plan.actualPrice * months;
+const baseTotal = plan.actualPrice * months;
 
-    const discountAmount = selectedDiscount
-      ? (baseTotal * selectedDiscount.discountPercent) / 100
-      : 0;
+let discountAmount = 0;
+
+if (!institute.hasPurchasedPlanBefore && selectedDiscount) {
+  discountAmount =
+    (baseTotal * selectedDiscount.discountPercent) / 100;
+}
 
     const GST_PERCENT = 18;
 
