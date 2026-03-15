@@ -10,6 +10,8 @@ const otpHandler = (Model) => {
     try {
       const { email } = req.body;
       const user = await Model.findOne({ email });
+      console.log("Body:", req.body);
+console.log("Email:", email);
       if (!user) return res.status(404).json({ message: "Email not found" });
 
       const otp = Math.floor(100000 + Math.random() * 900000);
