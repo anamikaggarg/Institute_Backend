@@ -3,9 +3,9 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const sendOtp = require("../utils/sendOtp");
 
-// OTP routes factory
+
 const otpHandler = (Model) => {
-  // 1️⃣ Forget password → send OTP
+  
   router.post("/forget-password", async (req, res) => {
     try {
       const { email } = req.body;
@@ -25,7 +25,7 @@ const otpHandler = (Model) => {
     }
   });
 
-  // 2️⃣ Verify OTP
+  
   router.post("/verify-otp", async (req, res) => {
     try {
       const { email, otp } = req.body;
@@ -39,7 +39,7 @@ const otpHandler = (Model) => {
     }
   });
 
-  // 3️⃣ Reset password
+
   router.post("/reset-password", async (req, res) => {
     try {
       const { email, password } = req.body;

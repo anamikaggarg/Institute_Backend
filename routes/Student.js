@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Attach OTP routes for Student
+
 router.use("/otp", otpHandler(Student));
 
 

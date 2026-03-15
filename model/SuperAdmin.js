@@ -24,6 +24,17 @@ const SuperAdminSchema = new mongoose.Schema(
     lastLogin: {
       type: Date
     },
+    
+  otp: {
+  type: Number
+},
+otpExpire: {
+  type: Number
+},
+resetSessionExpire: {
+  type: Number
+},
+
     isActive: {
       type: Boolean,
       default: true

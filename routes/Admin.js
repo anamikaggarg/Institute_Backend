@@ -4,7 +4,9 @@ const mongoose = require("mongoose");
 const superadmin = require("../model/SuperAdmin")
 const bodyParser = require("body-parser");
 const jwt = require('jsonwebtoken');
-const bcrypt = require("bcryptjs")
+const bcrypt = require("bcryptjs");
+const otpHandler = require("../routes/otpRoutes");
+
 
 
 
@@ -12,6 +14,7 @@ const bcrypt = require("bcryptjs")
 // .then(() => {
 //   console.log("MongoDB connected")
 // }).catch(err => console.log(err))
+router.use("/otp", otpHandler(superadmin));
 
 router.post("/signup",async(req,res)=>{
     const {name,email,password,lastLogin,isActive} = req.body;
