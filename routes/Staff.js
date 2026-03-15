@@ -7,9 +7,6 @@ const jwt = require("jsonwebtoken");
 
 router.post("/addStaff", async (req, res) => {
   try {
-
-    console.log("BODY DATA:", req.body);
-
     const newStaff = new Staff({
       InstituteId: req.body.InstituteId,
       InstituteName: req.body.InstituteName,

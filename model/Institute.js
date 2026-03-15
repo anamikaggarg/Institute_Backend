@@ -67,6 +67,15 @@ const instituteSchema = new mongoose.Schema({
       idCard: { type: Boolean, default: false }
     }
   },
+  otp: {
+  type: Number
+},
+otpExpire: {
+  type: Number
+},
+resetSessionExpire: {
+  type: Number
+},
 
   status: {
     type: String,

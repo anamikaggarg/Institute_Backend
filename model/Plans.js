@@ -18,6 +18,7 @@ const PlanSchema = new mongoose.Schema({
         courses: { type: Number, default: 0 }
     },
 
+    
     features: {
         academic: {
             studentInfo: { type: Boolean, default: false },

@@ -236,6 +236,7 @@ router.put("/updateStudent/:studentID", async (req, res) => {
     res.json({
       message: "Student updated successfully",
       student: student,
+      
     });
   } catch (error) {
     res.status(500).send(error.message);
