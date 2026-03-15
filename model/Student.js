@@ -35,6 +35,9 @@ const studentSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    otp: { type: Number, default: null },
+otpExpire: { type: Number, default: null },
+resetSessionExpire: { type: Number, default: null },
 
     address: String,
 

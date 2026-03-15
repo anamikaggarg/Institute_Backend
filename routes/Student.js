@@ -5,6 +5,7 @@ const multer = require("multer");
 const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const otpHandler = require("../routes/otpRoutes");
 
 
 
@@ -20,6 +21,9 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+
+// Attach OTP routes for Student
+router.use("/otp", otpHandler(Student));
 
 
 

@@ -6,6 +6,7 @@ const path = require('path');
 const multer = require('multer');
 const jwt = require("jsonwebtoken");
 const sendOtp = require("../utils/sendOtp");
+const otpHandler = require("../routes/otpRoutes");
 
 
 const storage = multer.diskStorage({
@@ -20,6 +21,7 @@ const storage = multer.diskStorage({
 })
 const upload = multer({storage});
 
+router.use("/otp", otpHandler(Institute));
 
 router.post("/register",upload.single('logo'), async (req, res) => {
   try {
@@ -141,116 +143,6 @@ router.get("/allInstitute", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-router.post("/forget-password", async (req,res)=>{
-  try{
-
-    const {email} = req.body;
-
-    const institute = await Institute.findOne({email});
-
-    if(!institute){
-      return res.status(404).json({
-        message:"Email not found"
-      });
-    }
-
-    const otp = Math.floor(100000 + Math.random()*900000);
-
-    const otpExpire = Date.now() + 2 * 60 * 1000;
-    const resetExpire = Date.now() + 10 * 60 * 1000;
-
-    institute.otp = otp;
-    institute.otpExpire = otpExpire;
-    institute.resetSessionExpire = resetExpire;
-
-    await institute.save();
-
-    await sendOtp(email, otp);
-
-    res.json({
-      success:true,
-      message:"OTP sent to your email"
-    });
-
-  }catch(err){
-    res.status(500).json({message:err.message});
-  }
-});
-router.post("/verify-otp", async(req,res)=>{
-  try{
-
-    const {email,otp} = req.body;
-
-    const institute = await Institute.findOne({email});
-
-    if(!institute){
-      return res.status(404).json({
-        message:"Institute not found"
-      });
-    }
-
-    if(institute.otp != otp){
-      return res.json({
-        message:"Invalid OTP"
-      });
-    }
-
-    if(institute.otpExpire < Date.now()){
-      return res.json({
-        message:"OTP expired"
-      });
-    }
-
-    res.json({
-      success:true,
-      message:"OTP verified"
-    });
-
-  }catch(err){
-    res.status(500).json({message:err.message});
-  }
-});
-
-router.post("/reset-password", async(req,res)=>{
-  try{
-
-    const {email,password} = req.body;
-
-    const institute = await Institute.findOne({email});
-
-    if(!institute){
-      return res.status(404).json({
-        message:"Institute not found"
-      });
-    }
-
-    if(institute.resetSessionExpire < Date.now()){
-      return res.json({
-        message:"Session expired"
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(password,10);
-
-    institute.password = hashedPassword;
-
-    institute.otp = null;
-    institute.otpExpire = null;
-    institute.resetSessionExpire = null;
-
-    await institute.save();
-
-    res.json({
-      success:true,
-      message:"Password reset successfully"
-    });
-
-  }catch(err){
-    res.status(500).json({message:err.message});
-  }
-});
-
 
 router.get("/search/:instituteId", async (req, res) => {
   try {
