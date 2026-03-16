@@ -1,162 +1,109 @@
 const express = require("express");
 const router = express.Router();
 const Staff = require("../model/Staff");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 
 
 router.post("/addStaff", async (req, res) => {
   try {
+    // Spreed operator (...) use karne se saari fields jo frontend se aa rahi hain automatic map ho jayengi
     const newStaff = new Staff({
-      InstituteId: req.body.InstituteId,
-      InstituteName: req.body.InstituteName,
-      ReferenceName: req.body.ReferenceName,
-      firstName: req.body.firstName,
-      LastName: req.body.LastName,
-      UserRole: req.body.UserRole,
-      ContactNumber: req.body.ContactNumber,
-      AadharNumber: req.body.AadharNumber,
-      PanNumber: req.body.PanNumber,
-      FathersName: req.body.FathersName,
-      MothersName: req.body.MothersName,
-      AppointmentDate: req.body.AppointmentDate,
-      HighestQualification: req.body.HighestQualification,
-      ESI: req.body.ESI,
-      Country: req.body.Country,
-      State: req.body.State,
-      Address: req.body.Address,
-      Gender: req.body.Gender,
-      BloodGroup: req.body.BloodGroup,
-      Dob: req.body.Dob
+      ...req.body 
     });
 
     await newStaff.save();
 
     res.status(201).json({
       success: true,
-      message: "Staff added successfully",
+      message: "Staff member added successfully",
       staff: newStaff
     });
-
   } catch (error) {
-
+    console.error("Error adding staff:", error);
     res.status(500).json({
+      success: false,
       error: error.message
     });
-
   }
 });
 
-
-
+// 2. GET ALL STAFF
 router.get("/allStaff", async (req, res) => {
   try {
+    // Sort by newest first
+    const staff = await Staff.find().sort({ createdAt: -1 });
 
-    const staff = await Staff.find();
-
-    if (staff.length === 0) {
+    if (!staff || staff.length === 0) {
       return res.status(404).json({
+        success: false,
         message: "No staff found"
       });
     }
 
     res.status(200).json({
-      message: "All staff",
+      success: true,
+      count: staff.length,
       staff
     });
-
   } catch (error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-
-
+// 3. SEARCH BY EMAIL
 router.get("/search/:email", async (req, res) => {
   try {
-
-    const email = req.params.email;
-
-    const staff = await Staff.findOne({ email });
+    const { email } = req.params;
+    // Schema mein field ka naam 'Email' (Capital E) hai ya 'email', ye check kar lena
+    const staff = await Staff.findOne({ Email: email }); 
 
     if (!staff) {
-      return res.status(404).json({
-        message: "Staff not found"
-      });
+      return res.status(404).json({ message: "Staff not found" });
     }
 
-    res.status(200).json({
-      message: "Staff found",
-      staff
-    });
-
+    res.status(200).json({ success: true, staff });
   } catch (error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
+    res.status(500).json({ error: error.message });
   }
 });
 
-
-
+// 4. UPDATE STAFF
 router.put("/updateStaff/:id", async (req, res) => {
   try {
-
     const updatedStaff = await Staff.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
-      { new: true }
+      { new: true, runValidators: true } 
     );
 
     if (!updatedStaff) {
-      return res.status(404).json({
-        message: "Staff not found"
-      });
+      return res.status(404).json({ message: "Staff not found" });
     }
 
     res.status(200).json({
+      success: true,
       message: "Staff updated successfully",
       data: updatedStaff
     });
-
   } catch (error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
+    res.status(500).json({ error: error.message });
   }
 });
 
-
-
+// 5. DELETE STAFF
 router.delete("/deleteStaff/:id", async (req, res) => {
   try {
-
     const deletedStaff = await Staff.findByIdAndDelete(req.params.id);
 
     if (!deletedStaff) {
-      return res.status(404).json({
-        message: "Staff not found"
-      });
+      return res.status(404).json({ message: "Staff not found" });
     }
 
     res.status(200).json({
+      success: true,
       message: "Staff deleted successfully"
     });
-
   } catch (error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
+    res.status(500).json({ error: error.message });
   }
 });
 

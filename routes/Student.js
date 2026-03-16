@@ -127,6 +127,9 @@ router.post("/reset-password", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+     console.log("BODY:", req.body);   // 👈 add this
+    console.log("PASSWORD:", req.body.password);
+
     const user = await Student.findOne({ email });
     if (!user) {
       return res.json({ message: "User not found" });
@@ -137,6 +140,7 @@ router.post("/reset-password", async (req, res) => {
     }
 
     const hash = await bcrypt.hash(password, 10);
+    console.log(hash);
 
     await Student.updateOne(
       { email: email },

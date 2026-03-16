@@ -27,7 +27,7 @@ const otpHandler = (Model) => {
     }
   });
 
-  
+   
   router.post("/verify-otp", async (req, res) => {
     try {
       const { email, otp } = req.body;
