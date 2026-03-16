@@ -123,19 +123,36 @@ router.post("/verify-otp", async(req,res)=>{
         return res.json({message:"OTP EXpired"});
     res.json({message:"OTP VERIFIED"});
 });
-router.post("/reset-password", async(req,res)=>{
-    const{email,password}=req.body;
-    const user=await Student.findOne({email});
-    if(!user)
-        return res.json({message:"user not found"});
-    if(user.resetSessionExpire < Date.now())
-        return res.json({message:"session expired"})
-    const hash=await bcrypt.hash(password,10);
-    user.password=hash;
-    user.otp=null;
-    user.otpExpire=null;
-    await user.save();
-    res.json({message:"Password RESET SUccessfully"});
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await Student.findOne({ email });
+    if (!user) {
+      return res.json({ message: "User not found" });
+    }
+
+    if (user.resetSessionExpire < Date.now()) {
+      return res.json({ message: "Session expired" });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+
+    await Student.updateOne(
+      { email: email },
+      {
+        $set: {
+          password: hash,
+          otp: null,
+          otpExpire: null,
+        },
+      }
+    );
+
+    res.json({ message: "Password reset successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 
