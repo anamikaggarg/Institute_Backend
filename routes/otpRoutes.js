@@ -11,7 +11,7 @@ const otpHandler = (Model) => {
       const { email } = req.body;
       const user = await Model.findOne({ email });
       console.log("Body:", req.body);
-console.log("Email:", email);
+        console.log("Email:", email);
       if (!user) return res.status(404).json({ message: "Email not found" });
 
       const otp = Math.floor(100000 + Math.random() * 900000);
@@ -32,6 +32,7 @@ console.log("Email:", email);
     try {
       const { email, otp } = req.body;
       const user = await Model.findOne({ email });
+      console.log(user);
       if (!user) return res.status(404).json({ message: "User not found" });
       if (user.otp != otp) return res.json({ message: "Invalid OTP" });
       if (user.otpExpire < Date.now()) return res.json({ message: "OTP expired" });

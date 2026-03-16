@@ -5,7 +5,8 @@ const multer = require("multer");
 const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const otpHandler = require("../routes/otpRoutes");
+const sendOtp=require('../utils/sendOtp');
+// const otpHandler = require("../routes/otpRoutes");
 
 
 
@@ -23,7 +24,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 
-router.use("/otp", otpHandler(Student));
+// router.use("/otp", otpHandler(Student));
 
 
 
@@ -60,7 +61,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     const existingStudent = await Student.findOne({ email });
 
     if (existingStudent) {
-      return res.status(409).json({
+      return res.status(409).json({ 
         message: "Student already registered with this email",
       });
     }
@@ -93,6 +94,49 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
   }
 });
 
+router.post("/forget-password", async (req,res)=>{
+    const {email}=req.body;
+    const user=await Student.findOne({email});
+    if(!user)
+        return res.json({message:"Email not found"});
+    const otp=Math.floor(100000 + Math.random()*900000);
+  
+  const otpExpire = Date.now() + 2 * 60 * 1000;
+  const resetExpire = Date.now() + 10 * 60 * 1000;
+
+    user.otp=otp;
+    user.otpExpire=otpExpire;
+    user.resetSessionExpire=resetExpire;
+    await user.save();
+    await sendOtp(email,otp);
+    res.json({message:"OTP SENT TO YOUR EMAIL PLEASE CHECK IT"});
+});
+
+router.post("/verify-otp", async(req,res)=>{
+    const {email,otp}=req.body;
+    const user=await Student.findOne({email});
+    if(!user)
+        return res.json({message:"USer not Found"});
+    if(user.otp!=otp)
+        return res.json({message:"Invalid otp"});
+    if(user.otpExpire < Date.now())
+        return res.json({message:"OTP EXpired"});
+    res.json({message:"OTP VERIFIED"});
+});
+router.post("/reset-password", async(req,res)=>{
+    const{email,password}=req.body;
+    const user=await Student.findOne({email});
+    if(!user)
+        return res.json({message:"user not found"});
+    if(user.resetSessionExpire < Date.now())
+        return res.json({message:"session expired"})
+    const hash=await bcrypt.hash(password,10);
+    user.password=hash;
+    user.otp=null;
+    user.otpExpire=null;
+    await user.save();
+    res.json({message:"Password RESET SUccessfully"});
+});
 
 
 

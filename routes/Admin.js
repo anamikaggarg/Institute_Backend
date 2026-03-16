@@ -5,6 +5,8 @@ const superadmin = require("../model/SuperAdmin")
 const bodyParser = require("body-parser");
 const jwt = require('jsonwebtoken');
 const bcrypt = require("bcryptjs");
+const sendOtp=require('../utils/sendOtp');
+// const otpHandler = require("../routes/otpRoutes");
 
 
 
@@ -13,6 +15,9 @@ const bcrypt = require("bcryptjs");
 // .then(() => {
 //   console.log("MongoDB connected")
 // }).catch(err => console.log(err))
+
+
+// router.use("/otp", otpHandler(superadmin));
 
 
 router.post("/signup",async(req,res)=>{
@@ -41,6 +46,53 @@ router.post("/signup",async(req,res)=>{
        })
 
 })
+
+
+router.post("/forget-password", async (req,res)=>{
+    const {email}=req.body;
+    const user=await superadmin.findOne({email});
+    if(!user)
+        return res.json({message:"Email not found"});
+    const otp=Math.floor(100000 + Math.random()*900000);
+  
+  const otpExpire = Date.now() + 2 * 60 * 1000;
+  const resetExpire = Date.now() + 10 * 60 * 1000;
+
+    user.otp=otp;
+    user.otpExpire=otpExpire;
+    user.resetSessionExpire=resetExpire;
+    await user.save();
+    await sendOtp(email,otp);
+    res.json({message:"OTP SENT TO YOUR EMAIL PLEASE CHECK IT"});
+});
+
+router.post("/verify-otp", async(req,res)=>{
+    const {email,otp}=req.body;
+    const user=await superadmin.findOne({email});
+    if(!user)
+        return res.json({message:"USer not Found"});
+    if(user.otp!=otp)
+        return res.json({message:"Invalid otp"});
+    if(user.otpExpire < Date.now())
+        return res.json({message:"OTP EXpired"});
+    res.json({message:"OTP VERIFIED"});
+});
+router.post("/reset-password", async(req,res)=>{
+    const{email,password}=req.body;
+    const user=await superadmin.findOne({email});
+    if(!user)
+        return res.json({message:"user not found"});
+    if(user.resetSessionExpire < Date.now())
+        return res.json({message:"session expired"})
+    const hash=await bcrypt.hash(password,10);
+    user.password=hash;
+    user.otp=null;
+    user.otpExpire=null;
+    await user.save();
+    res.json({message:"Password RESET SUccessfully"});
+});
+
+
 
 const verifyToken = (req, res, next) => {
   const token = req.session.token
