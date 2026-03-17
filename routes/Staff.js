@@ -88,6 +88,30 @@ router.put("/updateStaff/:id", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// --- GET STAFF BY EMPLOYEE ID ---
+router.get("/getStaffByEmpId/:empId", async (req, res) => {
+  try {
+    const { empId } = req.params;
+    
+    // Database mein 'EmployeeId' field se search karein
+    const staff = await Staff.findOne({ EmployeeId: empId }); 
+
+    if (!staff) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Staff member not found with this Employee ID" 
+      });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      staff 
+    });
+  } catch (error) {
+    console.error("Fetch Error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // 5. DELETE STAFF
 router.delete("/deleteStaff/:id", async (req, res) => {
