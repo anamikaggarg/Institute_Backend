@@ -1,35 +1,23 @@
 const mongoose = require("mongoose");
 
 const staffSchema = new mongoose.Schema({
-  // --- Institute Info (Multi-tenant support) ---
-  InstituteId: { type: String, required: true, index: true },
-  InstituteName: { type: String, required: true },
-
   // --- Basic Details ---
   firstName: { type: String, required: true },
   middleName: { type: String },
   LastName: { type: String },
   EmployeeId: { type: String, required: true, unique: true },
-  UserRole: { type: String, required: true }, // Teacher, Admin, etc.
+  UserRole: { type: String, required: true },
   Email: { type: String },
   ContactNumber: { type: String, required: true },
   Gender: { type: String },
-  Dob: { type: Date },
-  BloodGroup: { type: String },
+  Dob: { type: String }, // Date string format handle karne ke liye String rakha h
 
   // --- Employment Details ---
   JobTitle: { type: String },
   Designation: { type: String },
   Department: { type: String },
   EmploymentType: { type: String },
-  AppointmentDate: { type: Date },
-  ExperienceYears: { type: String },
-  HighestQualification: { type: String },
-  UAN: { type: String },
-  PFAccountNumber: { type: String },
-  ESICode: { type: String },
-  ReportingManager: { type: String },
-  Reportee: { type: String },
+  AppointmentDate: { type: String },
 
   // --- Additional Details ---
   AadharNumber: { type: String },
@@ -42,18 +30,22 @@ const staffSchema = new mongoose.Schema({
   SpouseName: { type: String },
   EmergencyContact: { type: String },
 
-  // --- Address Details ---
-  Address: { type: String },
-  State: { type: String },
-  Country: { type: String },
+  // --- Bank Details (Aapke frontend mein h isliye yahan add kiya) ---
+  BankName: { type: String },
+  BankAccountNumber: { type: String },
+  IFSC: { type: String },
+  AccountHolder: { type: String },
 
-  // --- Previous Experience ---
-  PrevInstituteName: { type: String },
-  PrevJobTitle: { type: String },
-  PrevJoiningDate: { type: Date },
+  // --- Experience (ARRAY FORMAT - CRITICAL FIX) ---
+  experience: [
+    {
+      PrevInstituteName: { type: String },
+      PrevJobTitle: { type: String },
+      PrevJoiningDate: { type: String }
+    }
+  ],
 
   // --- System Fields ---
-  photoUrl: { type: String }, // Image upload ke liye
   status: { type: String, default: "Active" }
 }, { timestamps: true });
 
