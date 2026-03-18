@@ -43,6 +43,12 @@ resetSessionExpire: { type: Number, default: null },
 
     profileImage: String,
 
+    resetToken: {
+      type: String,
+      default: null
+    },
+   
+
     role: {
       type: String,
       default: "student",

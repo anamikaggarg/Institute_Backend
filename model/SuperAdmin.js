@@ -24,16 +24,18 @@ const SuperAdminSchema = new mongoose.Schema(
     lastLogin: {
       type: Date
     },
-    
-  otp: {
-  type: Number
-},
-otpExpire: {
-  type: Number
-},
-resetSessionExpire: {
-  type: Number
-},
+
+    otp: {
+      type: Number
+    },
+    otpExpire: {
+      type: Number
+    },
+    resetToken: {
+      type: String,
+      default: null
+    },
+   
 
     isActive: {
       type: Boolean,

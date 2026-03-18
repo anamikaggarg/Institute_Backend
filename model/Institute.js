@@ -73,9 +73,12 @@ const instituteSchema = new mongoose.Schema({
 otpExpire: {
   type: Number
 },
-resetSessionExpire: {
-  type: Number
-},
+resetToken: {
+      type: String,
+      default: null
+    },
+   
+
 
   status: {
     type: String,

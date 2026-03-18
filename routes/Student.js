@@ -5,7 +5,7 @@ const multer = require("multer");
 const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const sendOtp=require('../utils/sendOtp');
+const sendOtp = require('../utils/sendOtp');
 // const otpHandler = require("../routes/otpRoutes");
 
 
@@ -61,7 +61,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     const existingStudent = await Student.findOne({ email });
 
     if (existingStudent) {
-      return res.status(409).json({ 
+      return res.status(409).json({
         message: "Student already registered with this email",
       });
     }
@@ -94,69 +94,77 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
   }
 });
 
-router.post("/forget-password", async (req,res)=>{
-    const {email}=req.body;
-    const user=await Student.findOne({email});
-    if(!user)
-        return res.json({message:"Email not found"});
-    const otp=Math.floor(100000 + Math.random()*900000);
-  
+router.post("/forget-password", async (req, res) => {
+  const { email } = req.body;
+  const user = await Student.findOne({ email });
+  if (!user)
+    return res.json({ message: "Email not found" });
+  const otp = Math.floor(100000 + Math.random() * 900000);
+
   const otpExpire = Date.now() + 2 * 60 * 1000;
-  const resetExpire = Date.now() + 10 * 60 * 1000;
 
-    user.otp=otp;
-    user.otpExpire=otpExpire;
-    user.resetSessionExpire=resetExpire;
-    await user.save();
-    await sendOtp(email,otp);
-    res.json({message:"OTP SENT TO YOUR EMAIL PLEASE CHECK IT"});
+  user.otp = otp;
+  user.otpExpire = otpExpire;
+
+  await user.save();
+  await sendOtp(email, otp);
+  res.json({ message: "OTP SENT TO YOUR EMAIL PLEASE CHECK IT" });
 });
 
-router.post("/verify-otp", async(req,res)=>{
-    const {email,otp}=req.body;
-    const user=await Student.findOne({email});
-    if(!user)
-        return res.json({message:"USer not Found"});
-    if(user.otp!=otp)
-        return res.json({message:"Invalid otp"});
-    if(user.otpExpire < Date.now())
-        return res.json({message:"OTP EXpired"});
-    res.json({message:"OTP VERIFIED"});
+
+router.post("/verify-otp", async (req, res) => {
+  const { email, otp } = req.body;
+  const user = await Student.findOne({ email });
+  if (!user)
+    return res.json({ success: false, message: "User not found" });
+  if (user.otp !== Number(otp))
+    return res.json({ success: false, message: "Invalid OTP" });
+
+  if (user.otpExpire < Date.now())
+    return res.json({ success: false, message: "OTP expired" });
+
+  const token = jwt.sign(
+    { useremail: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: "5m" }
+  );
+
+  user.resetToken = token;
+
+
+
+  user.otp = null;
+  user.otpExpire = null;
+
+
+  await user.save();
+
+  res.json({
+    success: true,
+    message: "OTP Verified",
+  });
 });
+
+
 router.post("/reset-password", async (req, res) => {
+  const { email, password } = req.body;
+  let decoded;
+  const user = await Student.findOne({ email });
   try {
-    const { email, password } = req.body;
 
-     console.log("BODY:", req.body);   // 👈 add this
-    console.log("PASSWORD:", req.body.password);
+    decoded = jwt.verify(user.resetToken, process.env.JWT_SECRET);
 
-    const user = await Student.findOne({ email });
-    if (!user) {
-      return res.json({ message: "User not found" });
-    }
-
-    if (user.resetSessionExpire < Date.now()) {
-      return res.json({ message: "Session expired" });
-    }
-
-    const hash = await bcrypt.hash(password, 10);
-    console.log(hash);
-
-    await Student.updateOne(
-      { email: email },
-      {
-        $set: {
-          password: hash,
-          otp: null,
-          otpExpire: null,
-        },
-      }
-    );
-
-    res.json({ message: "Password reset successfully" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  } catch (err) {
+    return res.json({ success: false, message: " expired token" });
   }
+
+  const hash = await bcrypt.hash(password, 10);
+
+  user.password = hash;
+  user.resetToken = null;
+  await user.save();
+
+  res.json({ success: true, message: "Password reset successfully" });
 });
 
 
@@ -305,7 +313,7 @@ router.put("/updateStudent/:studentID", async (req, res) => {
     res.json({
       message: "Student updated successfully",
       student: student,
-      
+
     });
   } catch (error) {
     res.status(500).send(error.message);
@@ -317,7 +325,7 @@ router.put("/updateStudent/:studentID", async (req, res) => {
 router.post("/logout", (req, res) => {
   try {
     if (req.session) {
-      req.session.destroy(() => {});
+      req.session.destroy(() => { });
     }
 
     res.status(200).json({

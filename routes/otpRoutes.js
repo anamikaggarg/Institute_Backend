@@ -28,40 +28,67 @@ const otpHandler = (Model) => {
   });
 
    
-  router.post("/verify-otp", async (req, res) => {
-    try {
-      const { email, otp } = req.body;
-      const user = await Model.findOne({ email });
-      console.log(user);
-      if (!user) return res.status(404).json({ message: "User not found" });
-      if (user.otp != otp) return res.json({ message: "Invalid OTP" });
-      if (user.otpExpire < Date.now()) return res.json({ message: "OTP expired" });
-      res.json({ success: true, message: "OTP verified" });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-  });
+ router.post("/verify-otp", async (req, res) => {
+   const { email, otp } = req.body;
+   const user = await Model.findOne({ email });
+   if (!user)
+     return res.json({ success: false, message: "User not found" });
+   if (user.otp !== Number(otp))
+     return res.json({ success: false, message: "Invalid OTP" });
+ 
+   if (user.otpExpire < Date.now())
+     return res.json({ success: false, message: "OTP expired" });
+ 
+   const token = jwt.sign(
+     { useremail: user.email },
+     process.env.JWT_SECRET,
+     { expiresIn: "10m" }
+   );
+ 
+   user.resetToken = token;
+ 
+ 
+   user.otp = null;
+   user.otpExpire = null;
+ 
+   await user.save();
+ 
+   res.json({
+     success: true,
+     message: "OTP Verified",
+     token
+   });
+ });
 
 
-  router.post("/reset-password", async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      const user = await Model.findOne({ email });
-      if (!user) return res.status(404).json({ message: "User not found" });
-      if (user.resetSessionExpire < Date.now()) return res.json({ message: "Session expired" });
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-      user.password = hashedPassword;
-      user.otp = null;
-      user.otpExpire = null;
-      user.resetSessionExpire = null;
-      await user.save();
-
-      res.json({ success: true, message: "Password reset successfully" });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-  });
+ router.post("/reset-password", async (req, res) => {
+   const { token, password } = req.body;
+   let decoded;
+ 
+   try {
+     decoded = jwt.verify(token, process.env.JWT_SECRET);
+   } catch (err) {
+     return res.json({ success: false, message: "Invalid or expired token" });
+   }
+   const user = await Model.findOne({
+     email: decoded.useremail,
+     resetToken: token,
+     
+   });
+   if (!user) {
+     return res.json({ success: false, message: "Invalid or expired token" });
+   }
+ 
+   const hash = await bcrypt.hash(password, 10);
+ 
+   user.password = hash;
+   user.resetToken = null;
+   user.resetSessionExpire = null;
+ 
+   await user.save();
+ 
+   res.json({ success: true, message: "Password reset successfully" });
+ });
 
   return router;
 };
