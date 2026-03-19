@@ -6,7 +6,7 @@ const path = require('path');
 const multer = require('multer');
 const jwt = require("jsonwebtoken");
 const sendOtp = require("../utils/sendOtp");
-const otpHandler = require("../routes/otpRoutes");
+
 
 
 const storage = multer.diskStorage({
@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
 })
 const upload = multer({storage});
 
-router.use("/otp", otpHandler(Institute));
+
 
 router.post("/register",upload.single('logo'), async (req, res) => {
   try {
@@ -408,6 +408,74 @@ router.post("/update-password", async (req, res) => {
     });
   }
 });
+
+router.post("/forget-password", async (req, res) => {
+  const { email } = req.body;
+  const user = await Institute.findOne({ email });
+  if (!user)
+    return res.json({ success: false, message: "Email not found" });
+  const otp = Math.floor(100000 + Math.random() * 900000);
+
+  const otpExpire = Date.now() + 2 * 60 * 1000;
+
+  user.otp = otp;
+  user.otpExpire = otpExpire;
+  await user.save();
+  await sendOtp(email, otp);
+  res.json({ success: true, message: "OTP SENT TO YOUR EMAIL PLEASE CHECK IT" });
+});
+
+ router.post("/verify-otp", async (req, res) => {
+   const { email, otp } = req.body;
+   const user = await Institute.findOne({ email });
+   if (!user)
+     return res.json({ success: false, message: "User not found" });
+   if (user.otp !== Number(otp))
+     return res.json({ success: false, message: "Invalid OTP" });
+ 
+   if (user.otpExpire < Date.now())
+     return res.json({ success: false, message: "OTP expired" });
+ 
+   const token = jwt.sign(
+     { useremail: user.email },
+     process.env.JWT_SECRET,
+     { expiresIn: "5m" }
+   );
+ 
+   user.resetToken = token;
+ 
+ 
+   user.otp = null;
+   user.otpExpire = null;
+ 
+   await user.save();
+ 
+   res.json({
+     success: true,
+     message: "OTP Verified"
+   });
+ });
+ 
+ router.post("/reset-password", async (req, res) => {
+   const { email, password } = req.body;
+   let decoded;
+   const user = await Institute.findOne({ email });
+   try {
+ 
+     decoded = jwt.verify(user.resetToken, process.env.JWT_SECRET);
+ 
+   } catch (err) {
+     return res.json({ success: false, message: " expired token" });
+   }
+ 
+   const hash = await bcrypt.hash(password, 10);
+ 
+   user.password = hash;
+   user.resetToken = null;
+   await user.save();
+ 
+   res.json({ success: true, message: "Password reset successfully" });
+ });
 
 router.post("/logout", (req, res) => {
   try {

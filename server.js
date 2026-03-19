@@ -32,9 +32,11 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://effie-uncandied-dumpily.ngrok-free.dev",
+  "https://institute-website-sand.vercel.app",
   "https://institute-backend-0ncp.onrender.com",
     "https://project-frontend-eqr4.vercel.app",
+    "institute-website-git-main-sneha-namdevs-projects.vercel.app",
+"institute-website-buk46o0mh-sneha-namdevs-projects.vercel.app"
 ];
 
 app.use(
