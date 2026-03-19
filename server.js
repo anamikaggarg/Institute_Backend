@@ -36,7 +36,8 @@ const allowedOrigins = [
   "https://institute-backend-0ncp.onrender.com",
     "https://project-frontend-eqr4.vercel.app",
     "https://institute-website-git-main-sneha-namdevs-projects.vercel.app",
-"https://institute-website-buk46o0mh-sneha-namdevs-projects.vercel.app"
+"https://institute-website-buk46o0mh-sneha-namdevs-projects.vercel.app",
+"https://project-frontend-h41t.vercel.app"
 ];
 
 app.use(
