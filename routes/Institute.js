@@ -226,26 +226,13 @@ const verifyToken = (req,res,next) =>{
 
 router.post("/login", async (req, res) => {
   try {
-    const { email, password , userRole} = req.body;
+    const { email, password } = req.body;
 
     const institute = await Institute.findOne({
       email: { $regex: `^${email}$`, $options: "i" }
     });
 
-     if (userRole === "Institute") {
-      user = await Institute.findOne({
-        email: { $regex: `^${email}$`, $options: "i" }
-      });
-    } else if (userRole === "Staff") {
-      user = await Staff.findOne({
-        email: { $regex: `^${email}$`, $options: "i" }
-      });
-    } else {
-      return res.status(400).json({
-        message: "Invalid Role",
-        success : false
-      });
-    }
+     
 
     
     if (!user) {
