@@ -6,7 +6,6 @@ const bodyParser = require("body-parser");
 const jwt = require('jsonwebtoken');
 const bcrypt = require("bcryptjs");
 const sendOtp = require('../utils/sendOtp');
-const SuperAdmin = require('../model/SuperAdmin');
 // const otpHandler = require("../routes/otpRoutes");
 
 
@@ -136,9 +135,11 @@ const verifyToken = (req, res, next) => {
 
 router.post("/login", async (req, res) => {
   const { email, password } = req.body
+  console.log(email);
   const Sadmin = await superadmin.findOne({
-    email: { $regex: `^${email}$ `}
+    email: { $regex: `^${email}$`}
   })
+  console.log(Sadmin)
 
 
   if (!Sadmin) {

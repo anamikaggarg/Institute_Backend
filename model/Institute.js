@@ -67,16 +67,24 @@ const instituteSchema = new mongoose.Schema({
       idCard: { type: Boolean, default: false }
     }
   },
+
+  userRole: {
+  type: String,
+  required: true,
+  enum: ["Staff", "Institute"],
+},
+
   otp: {
   type: Number
 },
+
 otpExpire: {
   type: Number
 },
 resetToken: {
       type: String,
       default: null
-    },
+},
    
 
 
@@ -88,6 +96,6 @@ resetToken: {
   createdAt: {
     type: Date,
     default: Date.now
-  }
+  },
 });
 module.exports = mongoose.model("Institute", instituteSchema);

@@ -1,25 +1,32 @@
 const mongoose = require("mongoose");
 
 const staffSchema = new mongoose.Schema({
-  // --- Basic Details ---
+ 
   firstName: { type: String, required: true },
   middleName: { type: String },
   LastName: { type: String },
   EmployeeId: { type: String, required: true, unique: true },
-  UserRole: { type: String, required: true },
+  // UserRole: { type: String, required: true },
   Email: { type: String },
   ContactNumber: { type: String, required: true },
   Gender: { type: String },
-  Dob: { type: String }, // Date string format handle karne ke liye String rakha h
+  Dob: { type: String }, 
 
-  // --- Employment Details ---
+  UserRole: {
+  type: String,
+  required: true,
+  enum: ["Teacher", "Receptionist", "Accountant"],
+  default: "student"
+},
+
+
   JobTitle: { type: String },
   Designation: { type: String },
   Department: { type: String },
   EmploymentType: { type: String },
   AppointmentDate: { type: String },
 
-  // --- Additional Details ---
+ 
   AadharNumber: { type: String },
   PANNumber: { type: String },
   FatherName: { type: String },
@@ -30,13 +37,13 @@ const staffSchema = new mongoose.Schema({
   SpouseName: { type: String },
   EmergencyContact: { type: String },
 
-  // --- Bank Details (Aapke frontend mein h isliye yahan add kiya) ---
+ 
   BankName: { type: String },
   BankAccountNumber: { type: String },
   IFSC: { type: String },
   AccountHolder: { type: String },
 
-  // --- Experience (ARRAY FORMAT - CRITICAL FIX) ---
+ 
   experience: [
     {
       PrevInstituteName: { type: String },
@@ -45,7 +52,7 @@ const staffSchema = new mongoose.Schema({
     }
   ],
 
-  // --- System Fields ---
+
   status: { type: String, default: "Active" }
 }, { timestamps: true });
 
