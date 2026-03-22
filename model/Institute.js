@@ -68,12 +68,6 @@ const instituteSchema = new mongoose.Schema({
     }
   },
 
-  userRole: {
-  type: String,
-  required: true,
-  enum: ["Staff", "Institute"],
-},
-
   otp: {
   type: Number
 },
