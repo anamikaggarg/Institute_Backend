@@ -266,42 +266,42 @@ router.post("/login", async (req, res) => {
 });
 
 // ================= SEPARATE PARENT LOGIN =================
-router.post("/parent-login", async (req, res) => {
-  try {
-    const { contactNo, dob } = req.body;
+// router.post("/parent-login", async (req, res) => {
+//   try {
+//     const { contactNo, dob } = req.body;
 
-    const student = await Student.findOne({
-      "parent.contactNo": contactNo,
-      dob: dob, // FIXED
-    });
+//     const student = await Student.findOne({
+//       "parent.contactNo": contactNo,
+//       dob: dob, // FIXED
+//     });
 
-    if (!student) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid details",
-      });
-    }
+//     if (!student) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Invalid details",
+//       });
+//     }
 
-    const token = jwt.sign(
-      {
-        studentID: student.studentID,
-        role: "parent",
-        parentName: student.parent.name, // FIXED
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+//     const token = jwt.sign(
+//       {
+//         studentID: student.studentID,
+//         role: "parent",
+//         parentName: student.parent.name, // FIXED
+//       },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "1h" }
+//     );
 
-    res.json({
-      success: true,
-      message: "Parent login successful",
-      token,
-      student,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+//     res.json({
+//       success: true,
+//       message: "Parent login successful",
+//       token,
+//       student,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
 
 
