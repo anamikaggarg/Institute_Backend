@@ -41,6 +41,10 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       instituteName,
       address,
       status,
+      parentName,
+      parentContactNo,
+      parentOccupation,
+      parentRelation
     } = req.body;
 
     const generateStudentId = async () => {
@@ -79,6 +83,12 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       instituteName,
       address,
       status,
+      parent: {
+        name: parentName,
+        contactNo: parentContactNo,
+        occupation: parentOccupation,
+        relation: parentRelation,
+      },
       profileImage: req.file ? req.file.filename : null,
     });
 
@@ -190,53 +200,109 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-
-
+// ================= LOGIN =================
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, parentContactNo, dob } = req.body;
 
-    const student = await Student.findOne({
-      email: { $regex: `^${email}$`, $options: "i" },
-    });
+    let student;
+    let role = "";
 
-    if (!student) {
-      return res.status(404).json({
-        message: "Student not found",
-        success: false,
+    // ===== STUDENT LOGIN =====
+    if (email && password) {
+      student = await Student.findOne({
+        email: { $regex: `^${email}$`, $options: "i" },
       });
+
+      if (!student)
+        return res.status(404).json({ message: "Student not found" });
+
+      const match = await bcrypt.compare(password, student.password);
+      if (!match)
+        return res.status(401).json({ message: "Invalid password" });
+
+      role = "student";
     }
 
-    const passwordMatch = await bcrypt.compare(password, student.password);
+    // ===== PARENT LOGIN =====
+    else if (parentContactNo && dob) {
+      student = await Student.findOne({
+        "parent.contactNo": parentContactNo,
+        dob: dob, // IMPORTANT FIX
+      });
 
-    if (!passwordMatch) {
-      return res.status(401).json({
-        message: "Invalid password",
-        success: false,
+      if (!student)
+        return res.status(404).json({
+          message: "Parent not found or wrong details",
+        });
+
+      role = "parent";
+    }
+
+    else {
+      return res.status(400).json({
+        message: "Provide email+password OR parentContactNo+dob",
       });
     }
 
     const token = jwt.sign(
       {
         studentID: student.studentID,
-        email: student.email,
+        role,
       },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
-    req.session.token = token;
-
-    res.status(200).json({
-      message: "Login successfully",
+    res.json({
       success: true,
-      token: token,
-      student: student,
+      role,
+      token,
+      student,
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
+
+// ================= SEPARATE PARENT LOGIN =================
+router.post("/parent-login", async (req, res) => {
+  try {
+    const { contactNo, dob } = req.body;
+
+    const student = await Student.findOne({
+      "parent.contactNo": contactNo,
+      dob: dob, // FIXED
+    });
+
+    if (!student) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid details",
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        studentID: student.studentID,
+        role: "parent",
+        parentName: student.parent.name, // FIXED
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.json({
+      success: true,
+      message: "Parent login successful",
+      token,
+      student,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 
 

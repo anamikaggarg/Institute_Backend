@@ -6,7 +6,7 @@ const path = require('path');
 const multer = require('multer');
 const jwt = require("jsonwebtoken");
 const sendOtp = require("../utils/sendOtp");
-
+const Staff = require("../model/Staff"); 
 
 
 const storage = multer.diskStorage({
@@ -232,15 +232,6 @@ router.post("/login", async (req, res) => {
       email: { $regex: `^${email}$`, $options: "i" }
     });
 
-     
-
-    
-    if (!user) {
-      return res.status(404).json({
-        message: `${role} not found`,
-        success: false
-      });
-    }
 
     if (!institute) {
       return res.status(404).json({

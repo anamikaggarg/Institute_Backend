@@ -12,6 +12,7 @@ const plans = require("./routes/Plans");
 const Billing = require("./routes/Bill");
 const Student = require("./routes/Student")
 const staffRoutes = require("./routes/Staff");
+const portfolioRoute = require("./routes/SPortfolio")
 
 
 
@@ -73,6 +74,8 @@ app.use("/plans",plans);
 app.use("/billing",Billing);
 app.use("/student",Student);
 app.use("/api/staff", staffRoutes);
+app.use("/api/portfolio", portfolioRoute);
+
 
 
 
