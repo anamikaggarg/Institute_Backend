@@ -18,6 +18,9 @@ const staffSchema = new mongoose.Schema({
   enum: ["Teacher", "Receptionist", "Accountant"],
   default: "student"
 },
+assignedClasses: [
+    { type: String } // Example: ["10-A", "12-B", "9-C"]
+  ],
 
 
   JobTitle: { type: String },
