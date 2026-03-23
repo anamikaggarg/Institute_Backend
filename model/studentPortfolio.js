@@ -15,7 +15,9 @@ const portfolioSchema = new mongoose.Schema({
   city: String,
   dob: String,
   bio: String,
-  avatar: String, 
+  avatar: String,        
+  addharImage: String,   
+  addharNo: String,     
 
   institution: String,
   degree: String,
