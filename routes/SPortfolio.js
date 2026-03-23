@@ -5,7 +5,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-
+/* ===================== UPLOAD FOLDER ===================== */
 const uploadDir = path.join(__dirname, "../uploads");
 
 if (!fs.existsSync(uploadDir)) {
@@ -19,10 +19,7 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueName =
-      file.fieldname +
-      "-" +
-      Date.now() +
-      path.extname(file.originalname);
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname);
     cb(null, uniqueName);
   },
 });
@@ -47,14 +44,35 @@ const upload = multer({ storage, fileFilter });
 router.post(
   "/create",
   upload.fields([
-    { name: "profileImg", maxCount: 1 },   // 👈 updated
+    { name: "profileImg", maxCount: 1 },
     { name: "addharImage", maxCount: 1 },
   ]),
   async (req, res) => {
     try {
       const data = req.body;
 
-      // Attach files
+      // 🔍 DEBUG (optional)
+      console.log("BODY:", data);
+      console.log("FILES:", req.files);
+
+      /* ===================== JSON PARSE ===================== */
+      if (data.interests) {
+        try {
+          data.interests = JSON.parse(data.interests);
+        } catch {
+          data.interests = [];
+        }
+      }
+
+      if (data.achievements) {
+        try {
+          data.achievements = JSON.parse(data.achievements);
+        } catch {
+          data.achievements = [];
+        }
+      }
+
+      /* ===================== FILES ===================== */
       if (req.files?.profileImg) {
         data.profileImg = req.files.profileImg[0].filename;
       }
@@ -63,7 +81,7 @@ router.post(
         data.addharImage = req.files.addharImage[0].filename;
       }
 
-      // Validation
+      /* ===================== VALIDATION ===================== */
       if (!data.email) {
         return res.status(400).json({
           success: false,
@@ -71,7 +89,7 @@ router.post(
         });
       }
 
-      // Check duplicate
+      /* ===================== DUPLICATE CHECK ===================== */
       const existing = await Portfolio.findOne({ email: data.email });
 
       if (existing) {
@@ -81,6 +99,7 @@ router.post(
         });
       }
 
+      /* ===================== CREATE ===================== */
       const newPortfolio = await Portfolio.create(data);
 
       res.status(201).json({
@@ -88,7 +107,9 @@ router.post(
         message: "Portfolio created successfully",
         data: newPortfolio,
       });
+
     } catch (err) {
+      console.log("ERROR:", err); // 👈 VERY IMPORTANT
       res.status(500).json({
         success: false,
         message: err.message,
@@ -144,13 +165,13 @@ router.delete("/:id", async (req, res) => {
       });
     }
 
-    // Delete profile image
+    // delete profile image
     if (data.profileImg) {
       const profilePath = path.join(uploadDir, data.profileImg);
       if (fs.existsSync(profilePath)) fs.unlinkSync(profilePath);
     }
 
-    // Delete aadhar
+    // delete aadhar
     if (data.addharImage) {
       const aadharPath = path.join(uploadDir, data.addharImage);
       if (fs.existsSync(aadharPath)) fs.unlinkSync(aadharPath);
