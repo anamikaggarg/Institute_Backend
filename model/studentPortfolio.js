@@ -7,33 +7,35 @@ const achievementSchema = new mongoose.Schema({
   year: String,
 });
 
-const portfolioSchema = new mongoose.Schema({
-  
-  name: String,
-  email: String,
-  phone: String,
-  city: String,
-  dob: String,
-  bio: String,
-  avatar: String,        
-  addharImage: String,   
-  addharNo: String,     
+const portfolioSchema = new mongoose.Schema(
+  {
+    name: String,
+    email: String,
+    phone: String,
+    city: String,
+    dob: String,
+    bio: String,
 
-  institution: String,
-  degree: String,
-  stream: String,
-  year: String,
-  grade: String,
+    profileImg: String,  
+    addharImage: String,
+    addharNo: String,
 
-  interests: [String],
+    institution: String,
+    degree: String,
+    stream: String,
+    year: String,
+    grade: String,
 
-  achievements: [achievementSchema],
+    interests: [String],
 
-  youtube: String,
-  instagram: String,
-  linkedin: String,
-  website: String,
+    achievements: [achievementSchema],
 
-}, { timestamps: true });
+    youtube: String,
+    instagram: String,
+    linkedin: String,
+    website: String,
+  },
+  { timestamps: true }
+);
 
 module.exports = mongoose.model("Portfolio", portfolioSchema);

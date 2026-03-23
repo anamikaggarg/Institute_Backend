@@ -27,7 +27,7 @@ const otpHandler = (Model) => {
     }
   });
 
-   
+ 
  router.post("/verify-otp", async (req, res) => {
    const { email, otp } = req.body;
    const user = await Model.findOne({ email });
@@ -42,7 +42,7 @@ const otpHandler = (Model) => {
    const token = jwt.sign(
      { useremail: user.email },
      process.env.JWT_SECRET,
-     { expiresIn: "10m" }
+     { expiresIn: "5m" }
    );
  
    user.resetToken = token;
@@ -55,8 +55,7 @@ const otpHandler = (Model) => {
  
    res.json({
      success: true,
-     message: "OTP Verified",
-     token
+     message: "OTP Verified"
    });
  });
 

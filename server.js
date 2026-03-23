@@ -66,6 +66,7 @@ app.use(
     }
   })
 );
+app.use("/uploads", express.static("./uploads"));
 
 // app.use("/",)
 app.use("/Sadmin",Sadminrouter);

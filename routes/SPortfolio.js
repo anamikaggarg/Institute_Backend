@@ -5,52 +5,79 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Make sure uploads folder exists
-const uploadDir = "uploads/";
+
+const uploadDir = path.join(__dirname, "../uploads");
+
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Multer storage config
+/* ===================== MULTER CONFIG ===================== */
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, "student-" + uniqueSuffix + path.extname(file.originalname));
+    const uniqueName =
+      file.fieldname +
+      "-" +
+      Date.now() +
+      path.extname(file.originalname);
+    cb(null, uniqueName);
   },
 });
 
-const upload = multer({ storage });
+// File filter
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|pdf/;
+  const ext = path.extname(file.originalname).toLowerCase();
 
-// CREATE Portfolio
+  if (allowedTypes.test(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only JPG, PNG, PDF files allowed"));
+  }
+};
+
+const upload = multer({ storage, fileFilter });
+
+/* ===================== ROUTES ===================== */
+
+/* ✅ CREATE PORTFOLIO */
 router.post(
   "/create",
   upload.fields([
-    { name: "avatar", maxCount: 1 },
+    { name: "profileImg", maxCount: 1 },   // 👈 updated
     { name: "addharImage", maxCount: 1 },
   ]),
   async (req, res) => {
     try {
       const data = req.body;
 
-      // Attach uploaded files
-      if (req.files["avatar"]) {
-        data.avatar = req.files["avatar"][0].filename;
-      }
-      if (req.files["addharImage"]) {
-        data.addharImage = req.files["addharImage"][0].filename;
+      // Attach files
+      if (req.files?.profileImg) {
+        data.profileImg = req.files.profileImg[0].filename;
       }
 
-      // Check for existing portfolio by email
-      if (!data.email) {
-        return res.status(400).json({ message: "Email is required" });
+      if (req.files?.addharImage) {
+        data.addharImage = req.files.addharImage[0].filename;
       }
-      const existingStudent = await Portfolio.findOne({ email: data.email });
-      if (existingStudent) {
+
+      // Validation
+      if (!data.email) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is required",
+        });
+      }
+
+      // Check duplicate
+      const existing = await Portfolio.findOne({ email: data.email });
+
+      if (existing) {
         return res.status(409).json({
-          message: "Student Portfolio already exists with this email",
+          success: false,
+          message: "Portfolio already exists with this email",
         });
       }
 
@@ -58,55 +85,77 @@ router.post(
 
       res.status(201).json({
         success: true,
-        message: "Portfolio saved successfully",
+        message: "Portfolio created successfully",
         data: newPortfolio,
       });
     } catch (err) {
       res.status(500).json({
         success: false,
-        message: "Server Error",
-        error: err.message,
+        message: err.message,
       });
     }
   }
 );
 
-// GET all portfolios
+/* ✅ GET ALL */
 router.get("/all", async (req, res) => {
   try {
-    const portfolios = await Portfolio.find().sort({ createdAt: -1 });
+    const data = await Portfolio.find().sort({ createdAt: -1 });
+
     res.json({
       success: true,
-      data: portfolios,
+      data,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// GET single portfolio by ID
+/* ✅ GET BY ID */
 router.get("/:id", async (req, res) => {
   try {
-    const portfolio = await Portfolio.findById(req.params.id);
-    if (!portfolio) {
-      return res.status(404).json({ message: "Portfolio not found" });
+    const data = await Portfolio.findById(req.params.id);
+
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        message: "Portfolio not found",
+      });
     }
+
     res.json({
       success: true,
-      data: portfolio,
+      data,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// DELETE portfolio by ID
+/* ✅ DELETE */
 router.delete("/:id", async (req, res) => {
   try {
-    const deleted = await Portfolio.findByIdAndDelete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ message: "Portfolio not found" });
+    const data = await Portfolio.findByIdAndDelete(req.params.id);
+
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        message: "Portfolio not found",
+      });
     }
+
+    // Delete profile image
+    if (data.profileImg) {
+      const profilePath = path.join(uploadDir, data.profileImg);
+      if (fs.existsSync(profilePath)) fs.unlinkSync(profilePath);
+    }
+
+    // Delete aadhar
+    if (data.addharImage) {
+      const aadharPath = path.join(uploadDir, data.addharImage);
+      if (fs.existsSync(aadharPath)) fs.unlinkSync(aadharPath);
+    }
+
     res.json({
       success: true,
       message: "Deleted successfully",
