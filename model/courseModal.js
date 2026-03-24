@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 
 const CourseSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  // model/courseModal.js mein ye line honi chahiye:
+courseId: { type: String, unique: true, required: true },
   students: { type: Number, default: 0 },
   status: { 
     type: String, 
