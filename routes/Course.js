@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const Courses = require("../model/courseModal"); // ✅ rename model
+const Courses = require("../model/courseModal");
 
-
+/* ================= CREATE COURSE ================= */
 router.post("/create", async (req, res) => {
   try {
     const {
@@ -17,7 +17,25 @@ router.post("/create", async (req, res) => {
       description
     } = req.body;
 
+    // 🔥 Generate Course ID (Institute jaisa)
+    const generateCourseId = async () => {
+      let uniqueId;
+      let exists = true;
+
+      while (exists) {
+        const randomNumber = Math.floor(10000 + Math.random() * 90000);
+        uniqueId = `COURSE-${randomNumber}`;
+
+        exists = await Courses.findOne({ courseId: uniqueId });
+      }
+
+      return uniqueId;
+    };
+
+    const courseId = await generateCourseId();
+
     const newCourse = new Courses({
+      courseId,
       name,
       students,
       status,
@@ -38,24 +56,24 @@ router.post("/create", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Create Error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
+/* ================= GET ALL ================= */
 router.get("/all", async (req, res) => {
   try {
     const courses = await Courses.find().sort({ createdAt: -1 });
 
-    if (!courses || courses.length === 0) {
+    if (!courses.length) {
       return res.status(404).json({
         success: false,
         message: "No courses found"
       });
     }
 
-    // Manual mapping taaki sirf selected fields hi jayen (No _id show)
     const courseData = courses.map(course => ({
+      courseId: course.courseId,
       name: course.name,
       students: course.students,
       status: course.status,
@@ -65,12 +83,11 @@ router.get("/all", async (req, res) => {
       maxSeats: course.maxSeats,
       nextBatch: course.nextBatch,
       description: course.description,
-      subjects: course.subjects // Agar subjects array hai toh wo bhi chala jayega
+      subjects: course.subjects
     }));
 
     res.status(200).json({
       success: true,
-      message: "All courses fetched successfully",
       courses: courseData
     });
 
@@ -79,10 +96,12 @@ router.get("/all", async (req, res) => {
   }
 });
 
-
-router.get("/course/:id", async (req, res) => {
+/* ================= GET SINGLE ================= */
+router.get("/course/:courseId", async (req, res) => {
   try {
-    const course = await Courses.findById(req.params.id);
+    const course = await Courses.findOne({
+      courseId: req.params.courseId
+    });
 
     if (!course) {
       return res.status(404).json({
@@ -93,8 +112,7 @@ router.get("/course/:id", async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Course fetched",
-      course: course
+      course
     });
 
   } catch (error) {
@@ -102,11 +120,11 @@ router.get("/course/:id", async (req, res) => {
   }
 });
 
-
-router.put("/updateCourse/:id", async (req, res) => {
+/* ================= UPDATE ================= */
+router.put("/updateCourse/:courseId", async (req, res) => {
   try {
-    const updatedCourse = await Courses.findByIdAndUpdate(
-      req.params.id,
+    const updatedCourse = await Courses.findOneAndUpdate(
+      { courseId: req.params.courseId },
       { $set: req.body },
       { new: true, runValidators: true }
     );
@@ -125,27 +143,33 @@ router.put("/updateCourse/:id", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Update Error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
-/* ===================== ASSIGN TEACHER ===================== */
-router.put("/assignTeacher/:id", async (req, res) => {
+
+/* ================= ASSIGN TEACHER ================= */
+router.put("/assignTeacher/:courseId", async (req, res) => {
   try {
-    const { facultyName } = req.body; // Frontend se teacher ka full name bhejenge
+    const { facultyName } = req.body;
 
     if (!facultyName) {
-      return res.status(400).json({ success: false, message: "Teacher name is required" });
+      return res.status(400).json({
+        success: false,
+        message: "Teacher name is required"
+      });
     }
 
-    const updatedCourse = await Courses.findByIdAndUpdate(
-      req.params.id,
-      { $set: { faculty: facultyName } }, // Sirf faculty field ko update karega
+    const updatedCourse = await Courses.findOneAndUpdate(
+      { courseId: req.params.courseId },
+      { $set: { faculty: facultyName } },
       { new: true }
     );
 
     if (!updatedCourse) {
-      return res.status(404).json({ success: false, message: "Course not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Course not found"
+      });
     }
 
     res.status(200).json({
@@ -159,10 +183,12 @@ router.put("/assignTeacher/:id", async (req, res) => {
   }
 });
 
-/* ===================== DELETE COURSE ===================== */
-router.delete("/deleteCourse/:id", async (req, res) => {
+/* ================= DELETE ================= */
+router.delete("/deleteCourse/:courseId", async (req, res) => {
   try {
-    const deletedCourse = await Courses.findByIdAndDelete(req.params.id);
+    const deletedCourse = await Courses.findOneAndDelete({
+      courseId: req.params.courseId
+    });
 
     if (!deletedCourse) {
       return res.status(404).json({
