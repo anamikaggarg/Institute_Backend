@@ -35,21 +35,23 @@ router.post("/create", async (req, res) => {
   }
 });
 
-/* ================= GET ALL ================= */
+/* ================= GET ALL (UPDATED WITH POPULATE) ================= */
 router.get("/all", async (req, res) => {
   try {
-    const courses = await Courses.find().sort({ createdAt: -1 });
-    // Yahan seedha courses bhej do, manual mapping ki zaroorat nahi agar aapko saare fields chahiye
+    // .populate("classTeacher") add kiya taaki list mein bhi naam dikhe
+    const courses = await Courses.find().populate("classTeacher").sort({ createdAt: -1 });
     res.status(200).json({ success: true, courses });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-/* ================= GET SINGLE ================= */
+/* ================= GET SINGLE (UPDATED WITH POPULATE) ================= */
 router.get("/course/:courseId", async (req, res) => {
   try {
-    const course = await Courses.findOne({ courseId: req.params.courseId });
+    // .populate("classTeacher") add kiya taaki refresh karne par naam na hate
+    const course = await Courses.findOne({ courseId: req.params.courseId }).populate("classTeacher");
+    
     if (!course) return res.status(404).json({ success: false, message: "Course not found" });
     res.status(200).json({ success: true, course });
   } catch (error) {
@@ -57,15 +59,14 @@ router.get("/course/:courseId", async (req, res) => {
   }
 });
 
-/* ================= UPDATE COURSE (Universal) ================= */
-// Ye route subjects, teacher, ya description—kuch bhi update kar dega
+/* ================= UPDATE COURSE (UPDATED WITH POPULATE) ================= */
 router.put("/updateCourse/:courseId", async (req, res) => {
   try {
     const updatedCourse = await Courses.findOneAndUpdate(
       { courseId: req.params.courseId },
       { $set: req.body },
       { new: true, runValidators: true }
-    );
+    ).populate("classTeacher"); // Populate here too so UI updates immediately
 
     if (!updatedCourse) return res.status(404).json({ success: false, message: "Course not found" });
 
@@ -75,13 +76,12 @@ router.put("/updateCourse/:courseId", async (req, res) => {
   }
 });
 
-/* ================= REMOVE TEACHER (Specific) ================= */
-// Isse aap frontend par 'Remove' button click karne par use kar sakte ho
+/* ================= REMOVE TEACHER ================= */
 router.put("/removeTeacher/:courseId", async (req, res) => {
   try {
     const updatedCourse = await Courses.findOneAndUpdate(
       { courseId: req.params.courseId },
-      { $set: { classTeacher: null } }, // Teacher field ko clear kar dega
+      { $set: { classTeacher: null } },
       { new: true }
     );
     res.status(200).json({ success: true, message: "Teacher removed", course: updatedCourse });
