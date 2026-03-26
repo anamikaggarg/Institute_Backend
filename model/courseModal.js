@@ -24,12 +24,12 @@ const courseSchema = new mongoose.Schema({
 
   faculty: {
     type: String,
-    required: true
+    
   },
 
   duration: {
     type: String,
-    required: true
+    
   },
 
   progress: {
@@ -39,7 +39,7 @@ const courseSchema = new mongoose.Schema({
 
   maxSeats: {
     type: Number,
-    required: true
+    
   },
 
   nextBatch: Date,
