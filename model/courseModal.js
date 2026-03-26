@@ -22,14 +22,13 @@ const courseSchema = new mongoose.Schema({
     default: "Active"
   },
 
-  faculty: {
-    type: String,
-    
-  },
-
   duration: {
     type: String,
     
+  },
+ classTeacher: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Staff' 
   },
 
   progress: {
