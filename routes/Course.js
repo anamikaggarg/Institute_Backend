@@ -2,33 +2,25 @@ const express = require("express");
 const router = express.Router();
 const Courses = require("../model/courseModal");
 
-/* ================= CREATE COURSE ================= */
+
 router.post("/create", async (req, res) => {
   try {
-    const {
-      name,
-      students,
-      status,
-      faculty,
-      duration,
-      progress,
-      maxSeats,
-      nextBatch,
-      description
-    } = req.body;
+    const { name, duration, description, subjects, sections, instituteId } = req.body;
 
-    // 🔥 Generate Course ID (Institute jaisa)
+    
+    if (!instituteId) {
+      return res.status(400).json({ success: false, message: "Institute ID is required" });
+    }
+
+    
     const generateCourseId = async () => {
       let uniqueId;
       let exists = true;
-
       while (exists) {
         const randomNumber = Math.floor(10000 + Math.random() * 90000);
-        uniqueId = `COURSE-${randomNumber}`;
-
+        uniqueId = `CRS-${randomNumber}`;
         exists = await Courses.findOne({ courseId: uniqueId });
       }
-
       return uniqueId;
     };
 
@@ -36,15 +28,13 @@ router.post("/create", async (req, res) => {
 
     const newCourse = new Courses({
       courseId,
+      instituteId, 
       name,
-      students,
-      status,
-      faculty,
       duration,
-      progress,
-      maxSeats,
-      nextBatch,
-      description
+      description,
+      subjects: subjects || [],
+      sections: sections || ["A"],
+      status: "Active" 
     });
 
     await newCourse.save();
@@ -60,80 +50,51 @@ router.post("/create", async (req, res) => {
   }
 });
 
-/* ================= GET ALL ================= */
+
 router.get("/all", async (req, res) => {
   try {
-    const courses = await Courses.find().sort({ createdAt: -1 });
+    const { instituteId } = req.query; 
 
-    if (!courses.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No courses found"
-      });
+    if (!instituteId) {
+      return res.status(400).json({ success: false, message: "Institute ID missing" });
     }
 
-    const courseData = courses.map(course => ({
-      courseId: course.courseId,
-      name: course.name,
-      students: course.students,
-      status: course.status,
-      faculty: course.faculty,
-      duration: course.duration,
-      progress: course.progress,
-      maxSeats: course.maxSeats,
-      nextBatch: course.nextBatch,
-      description: course.description,
-      subjects: course.subjects
-    }));
+    // Sirf usi institute ke courses dikhao
+    const courses = await Courses.find({ instituteId }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
-      courses: courseData
+      courses: courses
     });
 
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-
-/* ================= GET SINGLE ================= */
 router.get("/course/:courseId", async (req, res) => {
   try {
-    const course = await Courses.findOne({
-      courseId: req.params.courseId
-    });
+    const course = await Courses.findOne({ courseId: req.params.courseId });
 
     if (!course) {
-      return res.status(404).json({
-        success: false,
-        message: "Course not found"
-      });
+      return res.status(404).json({ success: false, message: "Course not found" });
     }
 
-    res.status(200).json({
-      success: true,
-      course
-    });
-
+    res.status(200).json({ success: true, course });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-/* ================= UPDATE ================= */
 router.put("/updateCourse/:courseId", async (req, res) => {
   try {
     const updatedCourse = await Courses.findOneAndUpdate(
       { courseId: req.params.courseId },
-      { $set: req.body },
+      { $set: req.body }, 
       { new: true, runValidators: true }
     );
 
     if (!updatedCourse) {
-      return res.status(404).json({
-        success: false,
-        message: "Course not found"
-      });
+      return res.status(404).json({ success: false, message: "Course not found" });
     }
 
     res.status(200).json({
@@ -147,43 +108,7 @@ router.put("/updateCourse/:courseId", async (req, res) => {
   }
 });
 
-/* ================= ASSIGN TEACHER ================= */
-router.put("/assignTeacher/:courseId", async (req, res) => {
-  try {
-    const { facultyName } = req.body;
 
-    if (!facultyName) {
-      return res.status(400).json({
-        success: false,
-        message: "Teacher name is required"
-      });
-    }
-
-    const updatedCourse = await Courses.findOneAndUpdate(
-      { courseId: req.params.courseId },
-      { $set: { faculty: facultyName } },
-      { new: true }
-    );
-
-    if (!updatedCourse) {
-      return res.status(404).json({
-        success: false,
-        message: "Course not found"
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: `Teacher ${facultyName} assigned successfully`,
-      course: updatedCourse
-    });
-
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-/* ================= DELETE ================= */
 router.delete("/deleteCourse/:courseId", async (req, res) => {
   try {
     const deletedCourse = await Courses.findOneAndDelete({
@@ -191,10 +116,7 @@ router.delete("/deleteCourse/:courseId", async (req, res) => {
     });
 
     if (!deletedCourse) {
-      return res.status(404).json({
-        success: false,
-        message: "Course not found"
-      });
+      return res.status(404).json({ success: false, message: "Course not found" });
     }
 
     res.status(200).json({

@@ -35,6 +35,11 @@ const studentSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
+    instituteId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Institute",
+},
     parent: {
       name: String,
       contactNo: String,
