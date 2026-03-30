@@ -61,6 +61,7 @@ enrolledStudents: [
     appliedAt: { type: Date, default: Date.now }
   }
 ],
+ instituteId: { type: String, required: true } ,
 
 
   createdAt: {

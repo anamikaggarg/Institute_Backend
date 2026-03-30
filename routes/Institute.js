@@ -332,7 +332,7 @@ router.post("/login", async (req, res) => {
         email: institute.email
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "24h" }
     );
 
     req.session.token = token;

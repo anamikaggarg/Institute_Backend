@@ -1,15 +1,18 @@
 const express = require("express");
 const router = express.Router();
 const Courses = require("../model/courseModal");
-    const Student = require("../model/Student");
+const Student = require("../model/Student");
+const verifyInstituteToken = require("../middleware/auth");
 
-/* ================= CREATE COURSE ================= */
-router.post("/create", async (req, res) => {
+
+router.post("/create",verifyInstituteToken, async (req, res) => {
   try {
     const {
       name, students, status, classTeacher, 
       duration, progress, maxSeats, nextBatch, description, subjects
     } = req.body;
+
+
 
     const generateCourseId = async () => {
       let uniqueId;
@@ -26,7 +29,9 @@ router.post("/create", async (req, res) => {
 
     const newCourse = new Courses({
       courseId, name, students, status, classTeacher,
-      duration, progress, maxSeats, nextBatch, description, subjects
+      duration, progress, maxSeats, nextBatch, description, subjects,
+       instituteId: req.institute.instituteId 
+
     });
 
     await newCourse.save();
@@ -37,7 +42,7 @@ router.post("/create", async (req, res) => {
 });
 
 
-router.get("/all", async (req, res) => {
+router.get("/all",verifyInstituteToken, async (req, res) => {
   try {
     // .populate("classTeacher") add kiya taaki list mein bhi naam dikhe
     const courses = await Courses.find().populate("classTeacher").sort({ createdAt: -1 });
@@ -47,12 +52,27 @@ router.get("/all", async (req, res) => {
   }
 });
 
-router.put("/assignStudent/:courseId/:studentId", async (req, res) => {
+// GET /courses/institute/:instituteId
+router.get("/institute/:instituteId", async (req, res) => {
+  try {
+    const { instituteId } = req.params;
+
+    // Courses fetch kar rahe instituteId ke basis pe
+    const courses = await Courses.find({ instituteId }).populate("classTeacher").sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, courses });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.put("/assignStudent/:courseId/:studentId",verifyInstituteToken, async (req, res) => {
   try {
     
     const { courseId, studentId } = req.params;
 
-    const course = await Courses.findOne({ courseId });
+    const course = await Courses.findOne({ courseId , instituteId: req.institute.instituteId });
+
     const student = await Student.findOne({ studentID: studentId });
 
     if (!course || !student) {
@@ -78,7 +98,7 @@ router.put("/assignStudent/:courseId/:studentId", async (req, res) => {
     await course.save();
 
     // ✅ FIX HERE
-    student.courseId = courseId;        // ⭐⭐⭐ MOST IMPORTANT
+    student.courseId = courseId;       
     student.approvalStatus = "APPROVED";
 
     await student.save();
@@ -90,7 +110,7 @@ router.put("/assignStudent/:courseId/:studentId", async (req, res) => {
   }
 });
 
-/*  GET SINGLE (UPDATED WITH POPULATE) */
+
 router.get("/course/:courseId", async (req, res) => {
   try {
     // .populate("classTeacher") add kiya taaki refresh karne par naam na hate
@@ -103,8 +123,8 @@ router.get("/course/:courseId", async (req, res) => {
   }
 });
 
-/* ================= UPDATE COURSE (UPDATED WITH POPULATE) ================= */
-router.put("/updateCourse/:courseId", async (req, res) => {
+
+router.put("/updateCourse/:courseId", verifyInstituteToken,async (req, res) => {
   try {
     const updatedCourse = await Courses.findOneAndUpdate(
       { courseId: req.params.courseId },
@@ -187,7 +207,7 @@ router.put("/approveStudent", async (req, res) => {
 
 
 /* ================= DELETE ================= */
-router.delete("/deleteCourse/:courseId", async (req, res) => {
+router.delete("/deleteCourse/:courseId",verifyInstituteToken, async (req, res) => {
   try {
     const deletedCourse = await Courses.findOneAndDelete({ courseId: req.params.courseId });
     if (!deletedCourse) return res.status(404).json({ success: false, message: "Course not found" });

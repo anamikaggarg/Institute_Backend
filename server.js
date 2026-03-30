@@ -32,30 +32,40 @@ mongoose.connect(process.env.MONGO_URI)
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://institute-website-sand.vercel.app",
-  "https://institute-backend-0ncp.onrender.com",
-    "https://project-frontend-eqr4.vercel.app",
-    "https://institute-website-git-main-sneha-namdevs-projects.vercel.app",
-"https://institute-website-buk46o0mh-sneha-namdevs-projects.vercel.app",
-"https://project-frontend-h41t.vercel.app"
-];
-
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
+    origin: "*",
+    credentials: true
   })
 );
+
+// const allowedOrigins = [
+//   "*"
+  
+//   "http://localhost:5173",
+
+//   "https://institute-website-sand.vercel.app",
+//   "https://institute-backend-0ncp.onrender.com",
+//     "https://project-frontend-eqr4.vercel.app",
+//     "https://institute-website-git-main-sneha-namdevs-projects.vercel.app",
+// "https://institute-website-buk46o0mh-sneha-namdevs-projects.vercel.app",
+// "https://project-frontend-h41t.vercel.app"
+// ];
+
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       if (!origin) return callback(null, true);
+
+//       if (allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//     credentials: true,
+//   })
+// );
 
 app.use(
   session({
