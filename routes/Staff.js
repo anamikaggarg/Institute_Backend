@@ -2,9 +2,11 @@ const express = require("express");
 const router = express.Router();
 const Staff = require("../model/Staff");
 const Institute = require("../model/Institute"); // Add institute model
-const bcrypt = require("bcryptjs"); // For password hashing
+const bcrypt = require("bcryptjs");
+const course = require("../model/courseModal")
 
-// 1. ADD STAFF WITH DUPLICATE CHECK
+
+
 router.post("/addStaff", async (req, res) => {
   try {
     const { email, password, name } = req.body;
@@ -18,7 +20,7 @@ router.post("/addStaff", async (req, res) => {
       });
     }
 
-    // Check if email already exists in Staff
+
     const inStaff = await Staff.findOne({ email: { $regex: `^${email}$`, $options: "i" } });
     if (inStaff) {
       return res.status(400).json({
@@ -27,7 +29,7 @@ router.post("/addStaff", async (req, res) => {
       });
     }
 
-    // Hash password before saving
+  
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newStaff = new Staff({
@@ -53,7 +55,8 @@ router.post("/addStaff", async (req, res) => {
   }
 });
 
-// 2. GET ALL STAFF
+
+
 router.get("/allStaff", async (req, res) => {
   try {
     const staff = await Staff.find().sort({ createdAt: -1 });
@@ -67,7 +70,7 @@ router.get("/allStaff", async (req, res) => {
   }
 });
 
-// 3. SEARCH BY EMAIL
+
 router.get("/search/:email", async (req, res) => {
   try {
     const { email } = req.params;
@@ -81,7 +84,7 @@ router.get("/search/:email", async (req, res) => {
   }
 });
 
-// 4. UPDATE STAFF
+
 router.put("/updateStaff/:id", async (req, res) => {
   try {
     const updatedStaff = await Staff.findByIdAndUpdate(
@@ -98,7 +101,7 @@ router.put("/updateStaff/:id", async (req, res) => {
   }
 });
 
-// 5. GET STAFF BY EMPLOYEE ID
+
 router.get("/getStaffByEmpId/:empId", async (req, res) => {
   try {
     const { empId } = req.params;
@@ -113,7 +116,62 @@ router.get("/getStaffByEmpId/:empId", async (req, res) => {
   }
 });
 
-// 6. DELETE STAFF
+router.post("/add-and-approve/:courseId", async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { studentId, studentName } = req.body; 
+
+    const alreadyExists = await course.findOne({
+      _id: courseId,
+      "enrolledStudents.studentId": studentId
+    });
+
+    if (alreadyExists) {
+      return res.status(400).json({
+        success: false,
+        message: "Student is already added to this course."
+      });
+    }
+
+
+    const updatedCourse = await course.findByIdAndUpdate(
+      courseId,
+      {
+        $push: {
+          enrolledStudents: {
+            studentId: studentId,
+            name: studentName,
+            status: "APPROVED", 
+            appliedAt: new Date()
+          }
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedCourse) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found."
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Student added and approved by Institute successfully!",
+      data: updatedCourse
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+
+
 router.delete("/deleteStaff/:id", async (req, res) => {
   try {
     const deletedStaff = await Staff.findByIdAndDelete(req.params.id);

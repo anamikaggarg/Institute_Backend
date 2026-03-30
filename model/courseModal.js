@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 
 const courseSchema = new mongoose.Schema({
+  
   courseId: {
     type: String,
     unique: true
@@ -47,10 +48,26 @@ const courseSchema = new mongoose.Schema({
 
   subjects: [String],
 
+  
+enrolledStudents: [
+  {
+    studentId: String, 
+    name: String,
+    status: {
+      type: String,
+      enum: ["PENDING", "APPROVED","REJECTED"],
+      default: "PENDING"
+    },
+    appliedAt: { type: Date, default: Date.now }
+  }
+],
+
+
   createdAt: {
     type: Date,
     default: Date.now
-  }
+  },
+
 });
 
 module.exports = mongoose.model("Courses", courseSchema);

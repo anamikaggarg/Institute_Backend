@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Courses = require("../model/courseModal");
+    const Student = require("../model/Student");
 
 /* ================= CREATE COURSE ================= */
 router.post("/create", async (req, res) => {
@@ -35,7 +36,7 @@ router.post("/create", async (req, res) => {
   }
 });
 
-/* ================= GET ALL (UPDATED WITH POPULATE) ================= */
+
 router.get("/all", async (req, res) => {
   try {
     // .populate("classTeacher") add kiya taaki list mein bhi naam dikhe
@@ -46,7 +47,50 @@ router.get("/all", async (req, res) => {
   }
 });
 
-/* ================= GET SINGLE (UPDATED WITH POPULATE) ================= */
+router.put("/assignStudent/:courseId/:studentId", async (req, res) => {
+  try {
+    
+    const { courseId, studentId } = req.params;
+
+    const course = await Courses.findOne({ courseId });
+    const student = await Student.findOne({ studentID: studentId });
+
+    if (!course || !student) {
+      return res.json({ success: false, message: "Not found" });
+    }
+
+    // already check
+    const exists = course.enrolledStudents.find(
+      (s) => s.studentId === studentId
+    );
+
+    if (exists) {
+      return res.json({ success: false, message: "Already added" });
+    }
+
+    // ✅ add in course
+    course.enrolledStudents.push({
+      studentId: student.studentID,
+      name: student.fullName,
+      status: "APPROVED"
+    });
+
+    await course.save();
+
+    // ✅ FIX HERE
+    student.courseId = courseId;        // ⭐⭐⭐ MOST IMPORTANT
+    student.approvalStatus = "APPROVED";
+
+    await student.save();
+
+    res.json({ success: true, message: "Assigned successfully" });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/*  GET SINGLE (UPDATED WITH POPULATE) */
 router.get("/course/:courseId", async (req, res) => {
   try {
     // .populate("classTeacher") add kiya taaki refresh karne par naam na hate
@@ -89,6 +133,58 @@ router.put("/removeTeacher/:courseId", async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+
+router.put("/approveStudent", async (req, res) => {
+  try {
+    const { courseId, studentID } = req.body;
+
+    // course find
+    const course = await Courses.findOne({ courseId });
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // student find in course
+    const student = course.enrolledStudents.find(
+      (s) => s.studentId === studentID
+    );
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found in course" });
+    }
+
+
+    if (student.status === "APPROVED") {
+      return res.json({ message: "Already approved" });
+    }
+
+    // ✅ APPROVE
+    student.status = "APPROVED";
+
+    // ✅ update total students count
+    course.students = course.enrolledStudents.filter(
+      (s) => s.status === "APPROVED"
+    ).length;
+
+    await course.save();
+
+    res.json({
+      success: true,
+      message: "Student approved successfully",
+      course,
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+
+
+
+
 
 /* ================= DELETE ================= */
 router.delete("/deleteCourse/:courseId", async (req, res) => {

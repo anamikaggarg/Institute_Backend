@@ -22,6 +22,19 @@ const studentSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    courseId: {
+    type: String,
+    default: null
+  },
+     approvalStatus: {
+    type: String,
+    enum: ["PENDING", "APPROVED"],
+    default: "PENDING"
+  },
+   
+    
+
+
 
     dob: {
       type: String,
@@ -29,7 +42,6 @@ const studentSchema = new mongoose.Schema(
     },
 
     contactNo: String,
-    course: String,
 
     instituteName: {
       type: String,
@@ -68,6 +80,7 @@ otpExpire: { type: Number, default: null },
      status: { type: String,  default: "Active" },
   },
   { timestamps: true }
+
 );
 
 

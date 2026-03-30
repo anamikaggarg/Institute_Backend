@@ -19,7 +19,7 @@ const staffSchema = new mongoose.Schema({
   default: "student"
 },
 assignedClasses: [
-    { type: String } // Example: ["10-A", "12-B", "9-C"]
+    { type: String } 
   ],
 
 

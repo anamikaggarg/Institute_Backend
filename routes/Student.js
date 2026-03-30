@@ -37,7 +37,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       password,
       dob,
       contactNo,
-      course,
       instituteName,
       address,
       status,
@@ -79,7 +78,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       password: hashedPassword,
       dob,
       contactNo,
-      course,
+   
       instituteName,
       address,
       status,
@@ -90,6 +89,8 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
         relation: parentRelation,
       },
       profileImage: req.file ? req.file.filename : null,
+       approvalStatus: "PENDING",
+      courseId: null
     });
 
     await newStudent.save();
@@ -248,6 +249,7 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       {
         studentID: student.studentID,
+        email:student.email,
         role,
       },
       process.env.JWT_SECRET,
@@ -335,6 +337,7 @@ router.get("/allStudents", async (req, res) => {
     }
 
     res.status(200).json({
+      success:true,
       message: "All students",
       students: students,
     });
@@ -344,6 +347,65 @@ router.get("/allStudents", async (req, res) => {
     });
   }
 });
+
+router.put("/approveStudent", async (req, res) => {
+  try {
+    const { studentId, courseId } = req.body;
+
+    const student = await Student.findOne({ studentID: studentId });
+
+    if (!student) {
+      return res.json({ success: false, message: "Student not found" });
+    }
+
+    // ✅ update student
+    student.approvalStatus = "APPROVED";
+    student.courseId = courseId;
+
+    await student.save();
+
+    // ✅ add into course
+    const course = await Courses.findOne({ courseId });
+
+    if (course) {
+      course.enrolledStudents.push({
+        studentId: student.studentID,
+        name: student.fullName,
+        status: "APPROVED"
+      });
+
+      await course.save();
+    }
+
+    res.json({
+      success: true,
+      message: "Student Approved"
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/* ================= STUDENTS BY COURSE ================= */
+router.get("/studentsByCourse/:courseId", async (req, res) => {
+  try {
+    const students = await Student.find({
+      courseId: req.params.courseId,
+      approvalStatus: "APPROVED"
+    });
+
+    res.json({
+      success: true,
+      students
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+module.exports = router;
 
 
 
@@ -363,7 +425,7 @@ router.put("/updateStudent/:studentID", async (req, res) => {
     student.email = req.body.email || student.email;
     student.dob = req.body.dob || student.dob;
     student.contactNo = req.body.contactNo || student.contactNo;
-    student.course = req.body.course || student.course;
+   
     student.instituteName =
       req.body.instituteName || student.instituteName;
     student.address = req.body.address || student.address;
@@ -383,6 +445,45 @@ router.put("/updateStudent/:studentID", async (req, res) => {
     });
   } catch (error) {
     res.status(500).send(error.message);
+  }
+});
+
+// to show course of that student
+router.get("/myCourse/:studentID", async (req, res) => {
+  try {
+    const Courses = require("../model/courseModal");
+
+    // student find
+    const student = await Student.findOne({
+      studentID: req.params.studentID
+    });
+
+    if (!student) {
+      return res.json({ success: false, message: "Student not found" });
+    }
+
+    // agar course assign nahi hai
+    if (!student.courseId) {
+      return res.json({
+        success: true,
+        message: "No course assigned yet",
+        course: null
+      });
+    }
+
+    // course fetch
+    const course = await Courses.findOne({
+      courseId: student.courseId
+    }).populate("classTeacher");
+
+    res.json({
+      success: true,
+      student: student.fullName,
+      course
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
