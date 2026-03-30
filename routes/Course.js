@@ -12,8 +12,6 @@ router.post("/create",verifyInstituteToken, async (req, res) => {
       duration, progress, maxSeats, nextBatch, description, subjects
     } = req.body;
 
-
-
     const generateCourseId = async () => {
       let uniqueId;
       let exists = true;
@@ -42,7 +40,7 @@ router.post("/create",verifyInstituteToken, async (req, res) => {
 });
 
 
-router.get("/all",verifyInstituteToken, async (req, res) => {
+router.get("/all", async (req, res) => {
   try {
     // .populate("classTeacher") add kiya taaki list mein bhi naam dikhe
     const courses = await Courses.find().populate("classTeacher").sort({ createdAt: -1 });
@@ -61,6 +59,24 @@ router.get("/institute/:instituteId", async (req, res) => {
     const courses = await Courses.find({ instituteId }).populate("classTeacher").sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, courses });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get("/teacher/:teacherId", verifyInstituteToken, async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+
+    const courses = await Courses.find({
+      classTeacher: teacherId,
+      instituteId: req.institute.instituteId
+    })
+      .populate("classTeacher")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, courses });
+
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -97,7 +113,7 @@ router.put("/assignStudent/:courseId/:studentId",verifyInstituteToken, async (re
 
     await course.save();
 
-    // ✅ FIX HERE
+    
     student.courseId = courseId;       
     student.approvalStatus = "APPROVED";
 
@@ -140,7 +156,7 @@ router.put("/updateCourse/:courseId", verifyInstituteToken,async (req, res) => {
   }
 });
 
-/* ================= REMOVE TEACHER ================= */
+
 router.put("/removeTeacher/:courseId", async (req, res) => {
   try {
     const updatedCourse = await Courses.findOneAndUpdate(
@@ -201,12 +217,6 @@ router.put("/approveStudent", async (req, res) => {
 });
 
 
-
-
-
-
-
-/* ================= DELETE ================= */
 router.delete("/deleteCourse/:courseId",verifyInstituteToken, async (req, res) => {
   try {
     const deletedCourse = await Courses.findOneAndDelete({ courseId: req.params.courseId });
