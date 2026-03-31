@@ -125,15 +125,32 @@ router.post("/addStaff", async (req, res) => {
     });
   }
 });
-
 router.get("/allStaff", async (req, res) => {
   try {
     const staff = await Staff.find().sort({ createdAt: -1 });
+
     if (!staff || staff.length === 0) {
       return res.status(404).json({ success: false, message: "No staff found" });
     }
 
-    res.status(200).json({ success: true, count: staff.length, staff });
+    // MongoId remove karke clean response
+    const staffData = staff.map(s => ({
+      staffId: s.staffId,
+      firstName: s.firstName,
+      middleName: s.middleName,
+      LastName: s.LastName,
+      Email: s.Email,
+      ContactNumber: s.ContactNumber,
+      UserRole: s.UserRole,
+      instituteId: s.instituteId, // agar string hai
+      createdAt: s.createdAt
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: staffData.length,
+      staff: staffData
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

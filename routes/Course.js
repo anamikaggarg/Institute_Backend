@@ -204,34 +204,55 @@ router.put("/assignStudent/:courseId/:studentId",verifyInstituteToken, async (re
     res.status(500).json({ message: err.message });
   }
 });
-
-
-
-router.put("/updateCourse/:courseId", verifyInstituteToken,async (req, res) => {
+router.put("/updateCourse/:courseId", async (req, res) => {
   try {
-    const updatedCourse = await Courses.findOneAndUpdate(
-      { courseId: req.params.courseId , instituteId: req.institute.instituteId},
-      { $set: req.body },
-      { new: true, runValidators: true }
-    ).populate("classTeacher"); // Populate here too so UI updates immediately
+    const { courseId } = req.params;
+    
+    // Agar frontend se direct classTeacher bhej rahe ho 
+    // to hum database me $addToSet use karenge taaki duplicate add na ho
+    let updateData = { ...req.body };
+    
+    if (req.body.classTeacher) {
+      // Isse classTeacher array me sirf string ID push hogi, koi objectId nahi
+      await Course.findOneAndUpdate(
+        { courseId: courseId },
+        { $addToSet: { classTeacher: req.body.classTeacher } },
+        { new: true }
+      );
+      delete updateData.classTeacher; // Alag se update ho gaya to body se hata do
+    }
 
-    if (!updatedCourse) return res.status(404).json({ success: false, message: "Course not found" });
+    // Baaki bachi hui fields ke liye
+    const updatedCourse = await Course.findOneAndUpdate(
+      { courseId: courseId },
+      { $set: updateData },
+      { new: true }
+    );
 
-    res.status(200).json({ success: true, message: "Updated successfully", course: updatedCourse });
+    if (!updatedCourse) {
+      return res.status(404).json({ success: false, message: "Course not found" });
+    }
+
+    res.status(200).json({ success: true, course: updatedCourse });
   } catch (error) {
+    console.error("Update Error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-
+// 🎯 ROUTE TO REMOVE A TEACHER FROM ARRAY
 router.put("/removeTeacher/:courseId", async (req, res) => {
   try {
-    const updatedCourse = await Courses.findOneAndUpdate(
-      { courseId: req.params.courseId },
-      { $set: { classTeacher: null } },
+    const { courseId } = req.params;
+    const { teacherId } = req.body; // STAFF-XXXX format me
+
+    const updatedCourse = await Course.findOneAndUpdate(
+      { courseId: courseId },
+      { $pull: { classTeacher: teacherId } }, // Array se remove karne ke liye
       { new: true }
     );
-    res.status(200).json({ success: true, message: "Teacher removed", course: updatedCourse });
+
+    res.status(200).json({ success: true, course: updatedCourse });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
