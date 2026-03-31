@@ -7,36 +7,107 @@ const course = require("../model/courseModal")
 
 
 
-router.post("/addStaff", async (req, res) => {
-  try {
-    const { email, password, name } = req.body;
+const generateStaffId = async () => {
+  let uniqueId;
+  let exists = true;
 
-    // Check if email already exists in Institute
-    const inInstitute = await Institute.findOne({ email: { $regex: `^${email}$`, $options: "i" } });
+  while (exists) {
+    const randomNumber = Math.floor(1000 + Math.random() * 9000);
+    uniqueId = `STAFF-${randomNumber}`;
+
+    exists = await Staff.findOne({ staffId: uniqueId });
+  }
+
+  return uniqueId;
+};
+
+
+
+// router.post("/addStaff", async (req, res) => {    
+//   try {
+//     const { email, password, name } = req.body;
+//     const inInstitute = await Institute.findOne({ email: { $regex: `^${email}$`, $options: "i" } });
+//     if (inInstitute) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Email already registered as Institute. Cannot add as Staff."
+//       });
+//     }
+
+
+//     const inStaff = await Staff.findOne({ email: { $regex: `^${email}$`, $options: "i" } });
+//     if (inStaff) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Email already registered as Staff."
+//       });
+//     }
+
+  
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     const newStaff = new Staff({
+//       email,
+//       password: hashedPassword,
+//       name,
+//       ...req.body // map any other fields from frontend
+//     });
+
+//     await newStaff.save();
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Staff member added successfully",
+//       staff: newStaff
+//     });
+//   } catch (error) {
+//     console.error("Error adding staff:", error);
+//     res.status(500).json({
+//       success: false,
+//       error: error.message
+//     });
+//   }
+// });
+
+router.post("/addStaff", async (req, res) => {    
+  try {
+    const { email, password } = req.body;
+
+    // ✅ check institute
+    const inInstitute = await Institute.findOne({
+      email: { $regex: `^${email}$`, $options: "i" }
+    });
+
     if (inInstitute) {
       return res.status(400).json({
         success: false,
-        message: "Email already registered as Institute. Cannot add as Staff."
+        message: "Email already registered as Institute"
       });
     }
 
+    // ✅ check staff
+    const inStaff = await Staff.findOne({
+      Email: { $regex: `^${email}$`, $options: "i" }
+    });
 
-    const inStaff = await Staff.findOne({ email: { $regex: `^${email}$`, $options: "i" } });
     if (inStaff) {
       return res.status(400).json({
         success: false,
-        message: "Email already registered as Staff."
+        message: "Email already registered as Staff"
       });
     }
 
-  
+    // 🔥 STEP 1: Generate staffId
+    const staffId = await generateStaffId();
+
+    // 🔥 STEP 2: hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 🔥 STEP 3: create staff (IMPORTANT LINE)
     const newStaff = new Staff({
-      email,
+      ...req.body,
       password: hashedPassword,
-      name,
-      ...req.body // map any other fields from frontend
+      staffId: staffId   // 👈 yaha assign karo
     });
 
     await newStaff.save();
@@ -46,16 +117,14 @@ router.post("/addStaff", async (req, res) => {
       message: "Staff member added successfully",
       staff: newStaff
     });
+
   } catch (error) {
-    console.error("Error adding staff:", error);
     res.status(500).json({
       success: false,
       error: error.message
     });
   }
 });
-
-
 
 router.get("/allStaff", async (req, res) => {
   try {
@@ -182,5 +251,34 @@ router.delete("/deleteStaff/:id", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+
+
+router.get("/teacher/:id/classes", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const teacher = await Staff.findOne({
+      _id: id,
+      UserRole: "Teacher"
+    }).select("firstName LastName assignedClasses");
+
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    res.json({
+      teacherName: `${teacher.firstName} ${teacher.LastName || ""}`,
+      totalClasses: teacher.assignedClasses.length,
+      assignedClasses: teacher.assignedClasses
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+
 
 module.exports = router;

@@ -5,7 +5,7 @@ const Student = require("../model/Student");
 const verifyInstituteToken = require("../middleware/auth");
 
 
-router.post("/create",verifyInstituteToken, async (req, res) => {
+router.post("/create", async (req, res) => {
   try {
     const {
       name, students, status, classTeacher, 
@@ -28,7 +28,7 @@ router.post("/create",verifyInstituteToken, async (req, res) => {
     const newCourse = new Courses({
       courseId, name, students, status, classTeacher,
       duration, progress, maxSeats, nextBatch, description, subjects,
-       instituteId: req.institute.instituteId 
+     
 
     });
 
@@ -40,15 +40,94 @@ router.post("/create",verifyInstituteToken, async (req, res) => {
 });
 
 
+
+// GET /courses/all
 router.get("/all", async (req, res) => {
   try {
-    // .populate("classTeacher") add kiya taaki list mein bhi naam dikhe
-    const courses = await Courses.find().populate("classTeacher").sort({ createdAt: -1 });
-    res.status(200).json({ success: true, courses });
+    const courses = await Courses.find().sort({ createdAt: -1 });
+
+    if (courses.length === 0) {
+      return res.status(404).json({ message: "No courses found" });
+    }
+
+    // MongoId fields ko remove karke sirf relevant info bhejna
+    const courseData = courses.map(course => ({
+      courseId: course.courseId,
+      instituteId: course.instituteId, // string
+      name: course.name,
+      students: course.students,
+      status: course.status,
+      duration: course.duration,
+      classTeacher: course.classTeacher, // agar populate nahi karna hai toh id bhi chalega
+      progress: course.progress,
+      maxSeats: course.maxSeats,
+      nextBatch: course.nextBatch,
+      description: course.description,
+      subjects: course.subjects,
+      enrolledStudents: course.enrolledStudents.map(s => ({
+        studentId: s.studentId,
+        name: s.name,
+        status: s.status,
+        appliedAt: s.appliedAt
+      })),
+      createdAt: course.createdAt
+    }));
+
+    res.status(200).json({
+      success: true,
+      courses: courseData
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
+
+
+
+router.get("/course/:courseId", async (req, res) => {
+  try {
+    const course = await Courses.findOne({ courseId: req.params.courseId }).populate("classTeacher");
+
+    if (!course) 
+      return res.status(404).json({ success: false, message: "Course not found" });
+
+    // MongoId remove karke clean response
+    const courseData = {
+      courseId: course.courseId,
+      instituteId: course.instituteId, // string
+      name: course.name,
+      students: course.students,
+      status: course.status,
+      duration: course.duration,
+      classTeacher: course.classTeacher
+        ? {
+            id: course.classTeacher._id.toString(), // optional, sirf reference chahiye toh hata bhi sakte ho
+            firstName: course.classTeacher.firstName,
+            lastName: course.classTeacher.LastName,
+            email: course.classTeacher.Email
+          }
+        : null,
+      progress: course.progress,
+      maxSeats: course.maxSeats,
+      nextBatch: course.nextBatch,
+      description: course.description,
+      subjects: course.subjects,
+      enrolledStudents: course.enrolledStudents.map(s => ({
+        studentId: s.studentId,
+        name: s.name,
+        status: s.status,
+        appliedAt: s.appliedAt
+      })),
+      createdAt: course.createdAt
+    };
+
+    res.status(200).json({ success: true, course: courseData });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 
 // GET /courses/institute/:instituteId
 router.get("/institute/:instituteId", async (req, res) => {
@@ -127,23 +206,11 @@ router.put("/assignStudent/:courseId/:studentId",verifyInstituteToken, async (re
 });
 
 
-router.get("/course/:courseId", async (req, res) => {
-  try {
-    // .populate("classTeacher") add kiya taaki refresh karne par naam na hate
-    const course = await Courses.findOne({ courseId: req.params.courseId }).populate("classTeacher");
-    
-    if (!course) return res.status(404).json({ success: false, message: "Course not found" });
-    res.status(200).json({ success: true, course });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
 
 router.put("/updateCourse/:courseId", verifyInstituteToken,async (req, res) => {
   try {
     const updatedCourse = await Courses.findOneAndUpdate(
-      { courseId: req.params.courseId },
+      { courseId: req.params.courseId , instituteId: req.institute.instituteId},
       { $set: req.body },
       { new: true, runValidators: true }
     ).populate("classTeacher"); // Populate here too so UI updates immediately
@@ -219,7 +286,7 @@ router.put("/approveStudent", async (req, res) => {
 
 router.delete("/deleteCourse/:courseId",verifyInstituteToken, async (req, res) => {
   try {
-    const deletedCourse = await Courses.findOneAndDelete({ courseId: req.params.courseId });
+    const deletedCourse = await Courses.findOneAndDelete({ courseId: req.params.courseId , instituteId: req.institute.instituteId});
     if (!deletedCourse) return res.status(404).json({ success: false, message: "Course not found" });
     res.status(200).json({ success: true, message: "Course deleted successfully" });
   } catch (error) {

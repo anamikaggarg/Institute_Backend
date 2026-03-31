@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 
 const staffSchema = new mongoose.Schema({
  
+   staffId: {
+    type: String,
+    unique: true
+  },
   firstName: { type: String, required: true },
   middleName: { type: String },
   LastName: { type: String },
@@ -18,10 +22,10 @@ const staffSchema = new mongoose.Schema({
   enum: ["Teacher", "Receptionist", "Accountant"],
   default: "student"
 },
-assignedClasses: [
-    { type: String } 
-  ],
 
+assignedClasses:[
+  {type:String}
+],
 
   JobTitle: { type: String },
   Designation: { type: String },

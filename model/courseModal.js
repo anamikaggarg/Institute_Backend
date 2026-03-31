@@ -6,6 +6,10 @@ const courseSchema = new mongoose.Schema({
     type: String,
     unique: true
   },
+   instituteId: {
+    type: String,
+    
+  },
 
   name: {
     type: String,
@@ -61,7 +65,7 @@ enrolledStudents: [
     appliedAt: { type: Date, default: Date.now }
   }
 ],
- instituteId: { type: String, required: true } ,
+ 
 
 
   createdAt: {
