@@ -214,7 +214,7 @@ router.put("/updateCourse/:courseId", async (req, res) => {
     
     if (req.body.classTeacher) {
       // Isse classTeacher array me sirf string ID push hogi, koi objectId nahi
-      await Course.findOneAndUpdate(
+      await Courses.findOneAndUpdate(
         { courseId: courseId },
         { $addToSet: { classTeacher: req.body.classTeacher } },
         { new: true }
@@ -223,7 +223,7 @@ router.put("/updateCourse/:courseId", async (req, res) => {
     }
 
     // Baaki bachi hui fields ke liye
-    const updatedCourse = await Course.findOneAndUpdate(
+    const updatedCourse = await Courses.findOneAndUpdate(
       { courseId: courseId },
       { $set: updateData },
       { new: true }
@@ -246,7 +246,7 @@ router.put("/removeTeacher/:courseId", async (req, res) => {
     const { courseId } = req.params;
     const { teacherId } = req.body; // STAFF-XXXX format me
 
-    const updatedCourse = await Course.findOneAndUpdate(
+    const updatedCourse = await Courses.findOneAndUpdate(
       { courseId: courseId },
       { $pull: { classTeacher: teacherId } }, // Array se remove karne ke liye
       { new: true }
