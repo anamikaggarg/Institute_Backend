@@ -161,12 +161,12 @@ router.get("/teacher/:teacherId", verifyInstituteToken, async (req, res) => {
   }
 });
 
-router.put("/assignStudent/:courseId/:studentId",verifyInstituteToken, async (req, res) => {
+router.put("/assignStudent/:courseId/:studentId", async (req, res) => {
   try {
     
     const { courseId, studentId } = req.params;
 
-    const course = await Courses.findOne({ courseId , instituteId: req.institute.instituteId });
+    const course = await Courses.findOne({ courseId });
 
     const student = await Student.findOne({ studentID: studentId });
 
@@ -257,6 +257,32 @@ router.put("/removeTeacher/:courseId", async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+// 5. GET COURSES BY TEACHER ID (STAFF-X)
+router.get("/teacher-courses/:teacherId", async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+
+    // Isse wo saare courses mil jayenge jahan classTeacher array mein ye ID exist karti hai
+    const courses = await Courses.find({
+      classTeacher: teacherId // MongoDB automatically array ke andar check kar leta hai
+    }).sort({ createdAt: -1 });
+
+    if (courses.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Is teacher ke liye koi course nahi mila." 
+      });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      count: courses.length, 
+      courses 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 
 router.put("/approveStudent", async (req, res) => {
@@ -312,6 +338,36 @@ router.delete("/deleteCourse/:courseId",verifyInstituteToken, async (req, res) =
     res.status(200).json({ success: true, message: "Course deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+});router.get("/course/:courseId/access/:studentId", async (req, res) => {
+  try {
+    const { courseId, studentId } = req.params;
+
+    // ✅ FIX HERE
+    const courseData = await Courses.findOne({ courseId });
+
+    if (!courseData) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const student = courseData.enrolledStudents.find(
+      s => s.studentId === studentId
+    );
+
+    if (!student || student.status !== "APPROVED") {
+      return res.status(403).json({
+        access: false,
+        message: "Course Locked 🔒"
+      });
+    }
+
+    res.json({
+      access: true,
+      course: courseData
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

@@ -6,6 +6,7 @@ const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sendOtp = require('../utils/sendOtp');
+const Courses = require("../model/courseModal")
 // const otpHandler = require("../routes/otpRoutes");
 
 
@@ -484,6 +485,39 @@ router.get("/myCourse/:studentID", async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+router.post("/apply-course", async (req, res) => {
+  try {
+    const { courseId, studentId, name } = req.body;
+
+     const courseData = await Courses.findOne({ courseId });
+
+
+    if (!courseData) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const already = courseData.enrolledStudents.find(
+      s => s.studentId.toString() === studentId
+    );
+
+    if (already) {
+      return res.status(400).json({ message: "Already applied" });
+    }
+
+    courseData.enrolledStudents.push({
+      studentId,
+      name,
+      status: "PENDING"
+    });
+
+    await courseData.save();
+
+    res.json({ message: "Request sent to teacher" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

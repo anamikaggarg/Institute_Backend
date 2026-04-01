@@ -294,6 +294,54 @@ router.get("/teacher/:id/classes", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+router.get("/teacher/:teacherId/requests", async (req, res) => {
+  try {
+    const courses = await course.find({
+      classTeacher: req.params.teacherId
+    });
+
+    const pending = [];
+
+    courses.forEach(c => {
+      c.enrolledStudents.forEach(s => {
+        if (s.status === "PENDING") {
+          pending.push({
+            course: c.name,
+            student: s
+          });
+        }
+      });
+    });
+
+    res.json(pending);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put("/approve-student", async (req, res) => {
+  try {
+    const { courseId, studentId } = req.body;
+
+    await course.findOneAndUpdate(
+      {
+         courseId: courseId,
+        "enrolledStudents.studentId": studentId
+      },
+      {
+        $set: {
+          "enrolledStudents.$.status": "APPROVED"
+        }
+      }
+    );
+
+    res.json({ message: "Student approved" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 
