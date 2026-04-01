@@ -5,6 +5,7 @@ const Institute = require("../model/Institute"); // Add institute model
 const bcrypt = require("bcryptjs");
 const course = require("../model/courseModal")
 
+const student = require("../model/Student")
 
 
 const generateStaffId = async () => {
@@ -319,14 +320,26 @@ router.get("/teacher/:teacherId/requests", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-// Teacher approve studnet
-router.put("/approve-student", async (req, res) => {
-  try {
-    const { courseId, studentId } = req.body;
 
-    await course.findOneAndUpdate(
+router.put("/approveStudent", async (req, res) => {
+  try {
+    const { studentId, courseId } = req.body;
+
+    // ✅ student update
+    const student = await student.findOne({ studentID: studentId });
+
+    if (!student) {
+      return res.json({ success: false, message: "Student not found" });
+    }
+
+    student.approvalStatus = "APPROVED";
+    student.courseId = courseId;
+    await student.save();
+
+    // ✅ course update
+    await Courses.findOneAndUpdate(
       {
-         courseId: courseId,
+        courseId: courseId,
         "enrolledStudents.studentId": studentId
       },
       {
@@ -336,12 +349,38 @@ router.put("/approve-student", async (req, res) => {
       }
     );
 
-    res.json({ message: "Student approved" });
+    res.json({
+      success: true,
+      message: "Student Approved by Staff"
+    });
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
+// Teacher approve studnet
+// router.put("/approve-student", async (req, res) => {
+//   try {
+//     const { courseId, studentId } = req.body;
+
+//     await course.findOneAndUpdate(
+//       {
+//          courseId: courseId,
+//         "enrolledStudents.studentId": studentId
+//       },
+//       {
+//         $set: {
+//           "enrolledStudents.$.status": "APPROVED"
+//         }
+//       }
+//     );
+
+//     res.json({ message: "Student approved" });
+
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
 
 

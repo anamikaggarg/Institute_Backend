@@ -284,45 +284,6 @@ router.get("/teacher-courses/:teacherId", async (req, res) => {
   }
 });
 
-router.put("/approveStudent", async (req, res) => {
-  try {
-    const { courseId, studentID } = req.body;
-
-    const course = await Courses.findOne({ courseId });
-    const studentDoc = await Student.findOne({ studentID });
-
-    if (!course || !studentDoc) {
-      return res.status(404).json({ message: "Not found" });
-    }
-
-    const student = course.enrolledStudents.find(
-      (s) => s.studentId === studentID
-    );
-
-    if (!student) {
-      return res.status(404).json({ message: "Student not in course" });
-    }
-
-    // ✅ course me approve
-    student.status = "APPROVED";
-
-    // ✅ ⭐ MOST IMPORTANT FIX
-    studentDoc.courseId = courseId;
-    studentDoc.approvalStatus = "APPROVED";
-
-    await studentDoc.save();
-    await course.save();
-
-    res.json({
-      success: true,
-      message: "Student approved successfully",
-    });
-
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 
 // router.put("/approveStudent", async (req, res) => {
 //   try {
