@@ -284,51 +284,91 @@ router.get("/teacher-courses/:teacherId", async (req, res) => {
   }
 });
 
-
 router.put("/approveStudent", async (req, res) => {
   try {
     const { courseId, studentID } = req.body;
 
-    // course find
     const course = await Courses.findOne({ courseId });
-    if (!course) {
-      return res.status(404).json({ message: "Course not found" });
+    const studentDoc = await Student.findOne({ studentID });
+
+    if (!course || !studentDoc) {
+      return res.status(404).json({ message: "Not found" });
     }
 
-    // student find in course
     const student = course.enrolledStudents.find(
       (s) => s.studentId === studentID
     );
 
     if (!student) {
-      return res.status(404).json({ message: "Student not found in course" });
+      return res.status(404).json({ message: "Student not in course" });
     }
 
-
-    if (student.status === "APPROVED") {
-      return res.json({ message: "Already approved" });
-    }
-
-    // ✅ APPROVE
+    // ✅ course me approve
     student.status = "APPROVED";
 
-    // ✅ update total students count
-    course.students = course.enrolledStudents.filter(
-      (s) => s.status === "APPROVED"
-    ).length;
+    // ✅ ⭐ MOST IMPORTANT FIX
+    studentDoc.courseId = courseId;
+    studentDoc.approvalStatus = "APPROVED";
 
+    await studentDoc.save();
     await course.save();
 
     res.json({
       success: true,
       message: "Student approved successfully",
-      course,
     });
 
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
+
+// router.put("/approveStudent", async (req, res) => {
+//   try {
+//     const { courseId, studentID } = req.body;
+
+//     // course find
+//     const course = await Courses.findOne({ courseId });
+//     if (!course) {
+//       return res.status(404).json({ message: "Course not found" });
+//     }
+
+//     // student find in course
+//     const student = course.enrolledStudents.find(
+//       (s) => s.studentId === studentID
+//     );
+
+//     if (!student) {
+//       return res.status(404).json({ message: "Student not found in course" });
+//     }
+
+
+//     if (student.status === "APPROVED") {
+//       return res.json({ message: "Already approved" });
+//     }
+
+//     // ✅ APPROVE
+//     student.status = "APPROVED";
+
+//     // ✅ update total students count
+//     course.students = course.enrolledStudents.filter(
+//       (s) => s.status === "APPROVED"
+//     ).length;
+
+//     await course.save();
+
+//     res.json({
+//       success: true,
+//       message: "Student approved successfully",
+//       course,
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
+
 
 
 router.delete("/deleteCourse/:courseId",verifyInstituteToken, async (req, res) => {

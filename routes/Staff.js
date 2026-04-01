@@ -319,7 +319,7 @@ router.get("/teacher/:teacherId/requests", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
+// Teacher approve studnet
 router.put("/approve-student", async (req, res) => {
   try {
     const { courseId, studentId } = req.body;
