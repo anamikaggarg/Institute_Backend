@@ -320,24 +320,24 @@ router.get("/teacher/:teacherId/requests", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 router.put("/approveStudent", async (req, res) => {
   try {
     const { studentId, courseId } = req.body;
 
-    // ✅ student update
-    const student = await student.findOne({ studentID: studentId });
+    // ✅ correct model name
+    const Student = await student.findOne({ studentID: studentId });
 
-    if (!student) {
+    if (!Student) {
       return res.json({ success: false, message: "Student not found" });
     }
 
-    student.approvalStatus = "APPROVED";
-    student.courseId = courseId;
-    await student.save();
+    // ✅ update student
+    Student.approvalStatus = "APPROVED";
+    Student.courseId = courseId;
+    await Student.save();
 
-    // ✅ course update
-    await Courses.findOneAndUpdate(
+    // ✅ correct model name
+    await course.findOneAndUpdate(
       {
         courseId: courseId,
         "enrolledStudents.studentId": studentId
