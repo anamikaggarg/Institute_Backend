@@ -39,6 +39,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       dob,
       contactNo,
       instituteName,
+      instituteId,
       address,
       status,
       parentName,
@@ -79,6 +80,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       password: hashedPassword,
       dob,
       contactNo,
+      instituteId,
    
       instituteName,
       address,
@@ -205,7 +207,7 @@ const verifyToken = (req, res, next) => {
 // ================= LOGIN =================
 router.post("/login", async (req, res) => {
   try {
-    const { email, password, parentContactNo, dob } = req.body;
+    const { email, password, parentContactNo, dob,  } = req.body;
 
     let student;
     let role = "";
@@ -309,7 +311,6 @@ router.post("/login", async (req, res) => {
 
 
 
-
 router.get("/dashboard", verifyToken, async (req, res) => {
   try {
     const student = await Student.findOne({
@@ -349,44 +350,44 @@ router.get("/allStudents", async (req, res) => {
   }
 });
 
-router.put("/approveStudent", async (req, res) => {
-  try {
-    const { studentId, courseId } = req.body;
+// router.put("/approveStudent", async (req, res) => {
+//   try {
+//     const { studentId, courseId } = req.body;
 
-    const student = await Student.findOne({ studentID: studentId });
+//     const student = await Student.findOne({ studentID: studentId });
 
-    if (!student) {
-      return res.json({ success: false, message: "Student not found" });
-    }
+//     if (!student) {
+//       return res.json({ success: false, message: "Student not found" });
+//     }
 
-    // ✅ update student
-    student.approvalStatus = "APPROVED";
-    student.courseId = courseId;
+//     // ✅ update student
+//     student.approvalStatus = "APPROVED";
+//     student.courseId = courseId;
 
-    await student.save();
+//     await student.save();
 
-    // ✅ add into course
-    const course = await Courses.findOne({ courseId });
+//     // ✅ add into course
+//     const course = await Courses.findOne({ courseId });
 
-    if (course) {
-      course.enrolledStudents.push({
-        studentId: student.studentID,
-        name: student.fullName,
-        status: "APPROVED"
-      });
+//     if (course) {
+//       course.enrolledStudents.push({
+//         studentId: student.studentID,
+//         name: student.fullName,
+//         status: "APPROVED"
+//       });
 
-      await course.save();
-    }
+//       await course.save();
+//     }
 
-    res.json({
-      success: true,
-      message: "Student Approved"
-    });
+//     res.json({
+//       success: true,
+//       message: "Student Approved"
+//     });
 
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// });
 
 /* ================= STUDENTS BY COURSE ================= */
 router.get("/studentsByCourse/:courseId", async (req, res) => {

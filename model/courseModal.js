@@ -1,59 +1,95 @@
 const mongoose = require("mongoose");
 
+// 🔹 Subject Schema
+const subjectSchema = new mongoose.Schema(
+  {
+    subjectId: { type: String },
+    name: { type: String, required: true },
+    code: { type: String },
+
+    duration: { type: Number },
+
+    status: {
+      type: String,
+      enum: ["Active", "Inactive"],
+      default: "Active",
+    },
+
+    subjectTeacher: {
+      type: [String],
+      default: [],
+    },
+
+    students: {
+      type: [String],
+      default: [],
+    },
+  },
+  { _id: true }
+);
+
+// 🔹 Course Schema
 const courseSchema = new mongoose.Schema({
   courseId: {
     type: String,
-    unique: true
+    unique: true,
   },
-  instituteId: {
-    type: String,
-  },
+
   name: {
     type: String,
-    required: true
+    required: true,
   },
+
+  description: {
+    type: String,
+    default: "No description provided",
+  },
+
   students: {
     type: Number,
-    default: 0
+    default: 0,
   },
+
   status: {
     type: String,
     enum: ["Healthy", "Active", "Average"],
-    default: "Active"
+    default: "Active",
   },
-  duration: {
-    type: String,
+
+  duration: String,
+
+  classTeacher: {
+    type: [String],
+    default: [],
   },
-  
-  classTeacher: [String], 
-  
-  progress: {
-    type: Number,
-    default: 0
-  },
-  maxSeats: {
-    type: Number,
-  },
+
+
   nextBatch: Date,
-  description: String,
-  subjects: [String],
+
+  subjects: {
+    type: [subjectSchema],
+    default: [],
+  },
 
   enrolledStudents: [
     {
-      studentId: String, 
+      studentId: String,
       name: String,
       status: {
         type: String,
-        enum: ["PENDING", "APPROVED","REJECTED"],
-        default: "PENDING"
+        enum: ["PENDING", "APPROVED", "REJECTED"],
+        default: "PENDING",
       },
-      appliedAt: { type: Date, default: Date.now }
-    }
+      appliedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
   ],
 
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
 });
 

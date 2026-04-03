@@ -23,16 +23,16 @@ const studentSchema = new mongoose.Schema(
       required: true,
     },
     courseId: {
-    type: String,
-    default: null
-  },
-     approvalStatus: {
-    type: String,
-    enum: ["PENDING", "APPROVED"],
-    default: "PENDING"
-  },
-   
-    
+      type: String,
+      default: null
+    },
+    approvalStatus: {
+      type: String,
+      enum: ["PENDING", "APPROVED"],
+      default: "PENDING"
+    },
+
+
 
 
 
@@ -48,38 +48,38 @@ const studentSchema = new mongoose.Schema(
       required: true,
     },
 
-    instituteId: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Institute",
-},
-    parent: {
-      name: String,
-      contactNo: String,
+    instituteId: [
+        { type: String }
+  
+    ],
+parent: {
+  name: String,
+    contactNo: String,
       occupation: String,
-      relation: String,
+        relation: String,
     },
-    otp: { type: Number, default: null },
+otp: { type: Number, default: null },
 otpExpire: { type: Number, default: null },
 
 
-    address: String,
+address: String,
 
 
-    profileImage: String,
+  profileImage: String,
 
     resetToken: {
-      type: String,
+  type: String,
       default: null
-    },
-   
+},
 
-    role: {
-      type: String,
+
+role: {
+  type: String,
       default: "student",
     },
-     status: { type: String,  default: "Active" },
+status: { type: String,  default: "Active" },
   },
-  { timestamps: true }
+{ timestamps: true }
 
 );
 
