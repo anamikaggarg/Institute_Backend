@@ -409,7 +409,7 @@ router.get("/studentsByCourse/:courseId", async (req, res) => {
   }
 });
 
-module.exports = router;
+
 
 
 
@@ -497,7 +497,7 @@ router.post("/apply-institute", async (req, res) => {
     const { instituteCode, studentId } = req.body;
 
     // ✅ 1. Find the student
-    const student = await Student.findOne({ studentID: studentId });
+  const student = await Student.findOne({ studentID: studentId });
 
     if (!student) {
       return res.status(404).json({ success: false, message: "Student not found" });
