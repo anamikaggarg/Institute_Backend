@@ -491,93 +491,51 @@ router.get("/myCourse/:studentID", async (req, res) => {
   }
 });
 // req send to ins
-// router.post("/apply-institute", async (req, res) => {
-//   try {
-//     const { instituteCode, studentId } = req.body;
-   
-
-//     // ✅ FIRST: student find
-//     const student = await Student.findOne({ studentID: studentId });
-
-//     if (!student) {
-//       return res.status(404).json({ message: "Student not found" });
-//     }
-
-//     // ✅ THEN: use student
-//     const alreadyApplied = student.appliedInstitutes.find(
-//       i => i.instituteCode === instituteCode
-//     );
-
-//     if (alreadyApplied) {
-//       return res.status(400).json({
-//         message: "Already applied to this institute",
-//       });
-//     }
-
-//     // rest code...
-    
-//     res.json({ message: " req send to institute" });
-
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
-
+// Apply to an institute
 router.post("/apply-institute", async (req, res) => {
   try {
     const { instituteCode, studentId } = req.body;
 
-    const student = await Student.findById(studentId);
+    // ✅ 1. Find the student
+    const student = await Student.findOne({ studentID: studentId });
 
     if (!student) {
-      return res.status(404).json({ message: "Student not found" });
+      return res.status(404).json({ success: false, message: "Student not found" });
     }
 
-    const institute = await Institute.findOne({ instituteId: instituteCode });
-
-    if (!institute) {
-      return res.status(404).json({ message: "Institute not found" });
-    }
-
-    // Already applied check
-    const alreadyApplied = student.appliedInstitutes?.find(
+    // ✅ 2. Check if already applied
+    const alreadyApplied = student.appliedInstitutes.find(
       i => i.instituteCode === instituteCode
     );
 
     if (alreadyApplied) {
-      return res.status(400).json({
-        message: "Already applied to this institute",
-      });
+      return res.status(400).json({ success: false, message: "Already applied to this institute" });
     }
 
-    // Push student side
+    // ✅ 3. Push the new institute with valid enum status
     student.appliedInstitutes.push({
       instituteCode,
-      status: "pending",
+      status: "PENDING", // Must match enum exactly
     });
 
     await student.save();
 
-    // Push institute side
-    institute.requestedStudents.push({
-      studentId,
-      name: student.fullName,
-      status: "pending",
-    });
-
-    await institute.save();
-
-    res.json({
+    res.status(200).json({
       success: true,
-      message: "Request sent to institute",
+      message: "Request sent to institute successfully",
+      appliedInstitute: {
+        instituteCode,
+        status: "PENDING"
+      }
     });
 
   } catch (err) {
-    console.log(err); // 👈 ADD THIS
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
+
+
+
 router.post("/apply-course", async (req, res) => {
   try {
     const { courseId, studentId, name } = req.body;
