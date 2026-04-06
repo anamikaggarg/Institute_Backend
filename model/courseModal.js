@@ -45,10 +45,11 @@ const courseSchema = new mongoose.Schema({
     default: "No description provided",
   },
 
-  students: {
-    type: Number,
-    default: 0,
+   instituteId: {   
+    type: String,
+    required: true
   },
+
 
   status: {
     type: String,

@@ -22,10 +22,7 @@ const studentSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    courseId: {
-      type: String,
-      default: null
-    },
+   
     approvalStatus: {
       type: String,
       enum: ["PENDING", "APPROVED"],
@@ -48,9 +45,28 @@ const studentSchema = new mongoose.Schema(
       required: true,
     },
 
-    instituteId: [
-        { type: String }
-  
+    courseId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Course",
+  default: null
+},
+
+instituteId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Institute",
+  required: true
+},
+
+    
+    appliedInstitutes: [
+      {
+        instituteCode: String,
+        status: {
+          type: String,
+          enum: ["PENDING", "APPROVED", "REJECTED"],
+          default: "PENDING"
+        }
+      }
     ],
 parent: {
   name: String,

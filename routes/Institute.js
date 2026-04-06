@@ -336,7 +336,8 @@ router.post("/login", async (req, res) => {
     );
 
     req.session.token = token;
-
+       req.session.instituteId = institute.instituteId;
+console.log("SESSION AFTER LOGIN:", req.session);
     res.status(200).json({
       message: "Login successfully",
       success: true,
@@ -388,6 +389,70 @@ router.get("/by-email/:email", async (req, res) => {
   } catch (error) {
     console.error("Error fetching institute by email:", error);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+// req send to institute
+router.post("/apply-institute", async (req, res) => {
+  try {
+    const { instituteCode, studentId } = req.body;
+
+
+    // ✅ student find
+    const student = await student.findOne({ studentID: studentId });
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    // ✅ institute find
+    const institute = await Institute.findOne({ instituteCode });
+
+    if (!institute) {
+      return res.status(404).json({ message: "Institute not found" });
+    }
+
+    // ✅ check already applied (student side)
+    const alreadyApplied = student.appliedInstitutes.find(
+      i => i.instituteCode === instituteCode
+    );
+
+    if (alreadyApplied) {
+      return res.status(400).json({
+        message: "Already applied to this institute",
+      });
+    }
+
+    // ✅ push in student
+    student.appliedInstitutes.push({
+      instituteCode,
+      status: "PENDING",
+    });
+
+    await student.save();
+
+    // ✅ check already in institute
+    const alreadyInInstitute = institute.requestedStudents.find(
+      s => s.studentId === studentId
+    );
+
+    if (!alreadyInInstitute) {
+      institute.requestedStudents.push({
+        studentId,
+        name: student.fullName,
+        status: "PENDING",
+      });
+
+      await institute.save();
+    }
+
+    res.json({
+      success: true,
+      message: "Request sent to institute",
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 router.post("/update-password", async (req, res) => {

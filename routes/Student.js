@@ -1,12 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const Student = require("../model/Student");
+const Courses = require("../model/courseModal")
+const Institute = require("../model/Institute")
 const multer = require("multer");
 const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sendOtp = require('../utils/sendOtp');
-const Courses = require("../model/courseModal")
+
 // const otpHandler = require("../routes/otpRoutes");
 
 
@@ -486,6 +488,38 @@ router.get("/myCourse/:studentID", async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+// req send to ins
+router.post("/apply-institute", async (req, res) => {
+  try {
+    const { instituteCode, studentId } = req.body;
+    const Institute = require("../model/Institute");
+
+    // ✅ FIRST: student find
+    const student = await Student.findOne({ studentID: studentId });
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    // ✅ THEN: use student
+    const alreadyApplied = student.appliedInstitutes.find(
+      i => i.instituteCode === instituteCode
+    );
+
+    if (alreadyApplied) {
+      return res.status(400).json({
+        message: "Already applied to this institute",
+      });
+    }
+
+    // rest code...
+    
+    res.json({ message: " req send to institute" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 router.post("/apply-course", async (req, res) => {

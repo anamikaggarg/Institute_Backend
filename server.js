@@ -69,11 +69,12 @@ app.use(
 
 app.use(
   session({
-   secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || "secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
+      secure: false // ⚠️ localhost ke liye MUST
     }
   })
 );

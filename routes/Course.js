@@ -6,6 +6,15 @@ const verifyInstituteToken = require("../middleware/auth");
 
 router.post("/create", async (req, res) => {
   try {
+    // const instituteId = req.session.instituteId; // ✅ session se
+
+    // if (!instituteId) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "Login required"
+    //   });
+    // }
+    // ✅ Generate Course ID
     const generateCourseId = async () => {
       let uniqueId;
       let exists = true;
@@ -18,11 +27,29 @@ router.post("/create", async (req, res) => {
       return uniqueId;
     };
 
+    // ✅ Generate Subject ID
+    const generateSubjectId = () => {
+      return `SUB-${Math.floor(1000 + Math.random() * 9000)}`;
+    };
+
     const courseId = await generateCourseId();
+
+    // ✅ Subjects ko modify karna (agar aaye hain)
+    let subjectsWithId = [];
+
+    if (req.body.subjects && req.body.subjects.length > 0) {
+      subjectsWithId = req.body.subjects.map((sub) => ({
+        subjectId: generateSubjectId(),
+        name: sub.name || sub, // string bhi handle karega
+        teacher: null // default
+      }));
+    }
 
     const newCourse = new Courses({
       ...req.body,
-      courseId
+      courseId,
+      subjects: subjectsWithId,
+      instituteId
     });
 
     await newCourse.save();
@@ -34,7 +61,10 @@ router.post("/create", async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 });
 // router.post("/create", async (req, res) => {
@@ -118,6 +148,16 @@ router.post("/create", async (req, res) => {
 
 router.get("/all", async (req, res) => {
   try {
+    //  console.log("SESSION:", req.session); // 👈 add this
+
+  //  const instituteId = req.session.instituteId;
+
+    // if (!instituteId) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "Login required"
+    //   });
+    // }
     const courses = await Courses.find()
       .sort({ createdAt: -1 })
       .lean();
@@ -242,18 +282,26 @@ router.get("/teacher/:teacherId", verifyInstituteToken, async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
-
 router.put("/assignStudent/:courseId/:studentId", async (req, res) => {
   try {
-    
     const { courseId, studentId } = req.params;
 
-    const course = await Courses.findOne({ courseId });
-
+    const course = await Courses.findOne({ courseId }); // string wala
     const student = await Student.findOne({ studentID: studentId });
 
     if (!course || !student) {
       return res.json({ success: false, message: "Not found" });
+    }
+
+    // ✅ SAME INSTITUTE CHECK
+    if (
+      student.instituteId.toString() !==
+      course.instituteId.toString()
+    ) {
+      return res.json({
+        success: false,
+        message: "Different institute ❌"
+      });
     }
 
     // already check
@@ -274,8 +322,8 @@ router.put("/assignStudent/:courseId/:studentId", async (req, res) => {
 
     await course.save();
 
-    
-    student.courseId = courseId;       
+    // 🔥 MAIN FIX HERE
+    student.courseId = course._id;   // ✅ ObjectId use karo
     student.approvalStatus = "APPROVED";
 
     await student.save();
@@ -286,6 +334,9 @@ router.put("/assignStudent/:courseId/:studentId", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+
+// for classteacher assign
 router.put("/updateCourse/:courseId", async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -321,7 +372,84 @@ router.put("/updateCourse/:courseId", async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+// ✅ ASSIGN TEACHER TO SPECIFIC SUBJECT
+router.put("/assignSubjectTeacher", async (req, res) => {
+  try {
+    const { courseId, subjectId, teacherId } = req.body;
 
+    console.log("👉 courseId:", courseId);
+    console.log("👉 subjectId:", subjectId);
+    console.log("👉 teacherId:", teacherId);
+
+    // ❌ agar teacherId hi nahi aaya
+    if (!teacherId) {
+      return res.status(400).json({
+        success: false,
+        message: "teacherId is required ❌"
+      });
+    }
+
+    const course = await Courses.findOne({ courseId });
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found ❌"
+      });
+    }
+
+    console.log("📚 All Subjects:", course.subjects);
+
+    const subjectIndex = course.subjects.findIndex(
+      (sub) => sub.subjectId === subjectId
+    );
+
+    console.log("👉 Found Index:", subjectIndex);
+
+    if (subjectIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Subject not found ❌"
+      });
+    }
+
+    // ✅ IMPORTANT FIX (array push)
+    if (!course.subjects[subjectIndex].subjectTeacher) {
+      course.subjects[subjectIndex].subjectTeacher = [];
+    }
+
+    // duplicate check
+    if (
+      course.subjects[subjectIndex].subjectTeacher.includes(teacherId)
+    ) {
+      return res.json({
+        success: false,
+        message: "Teacher already assigned ⚠️"
+      });
+    }
+
+    console.log("✅ Before Save:", course.subjects[subjectIndex]);
+
+    course.subjects[subjectIndex].subjectTeacher.push(teacherId);
+
+    await course.save();
+
+    console.log("✅ After Save:", course.subjects[subjectIndex]);
+
+    res.json({
+      success: true,
+      message: "Subject teacher assigned successfully ✅",
+      subject: course.subjects[subjectIndex]
+    });
+
+  } catch (error) {
+    console.error("❌ ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
 // ROUTE TO REMOVE A TEACHER FROM ARRAY
 router.put("/removeTeacher/:courseId", async (req, res) => {
   try {
