@@ -492,47 +492,84 @@ router.get("/myCourse/:studentID", async (req, res) => {
 });
 // req send to ins
 // Apply to an institute
+
+
+// POST /student/apply-institute
+// POST /student/apply-institute
+// POST /student/apply-institute
 router.post("/apply-institute", async (req, res) => {
-  try {
-    const { instituteCode, studentId } = req.body;
+   try {
+ // 1️⃣ Grab variables (Handles both 'studentId' and 'studentID')
+   let { studentID, studentId, courseCode, instituteCode } = req.body;
+   let actualStudentID = studentID || studentId;
 
-    // ✅ 1. Find the student
-  const student = await Student.findOne({ studentID: studentId });
+   if (!actualStudentID || !instituteCode) {
+   return res.status(400).json({ 
+   success: false, 
+   message: "studentId and instituteCode are required" 
+   });
+   }
 
-    if (!student) {
-      return res.status(404).json({ success: false, message: "Student not found" });
-    }
+    // 2️⃣ Clean inputs
+    actualStudentID = actualStudentID.trim();
+    if (courseCode) courseCode = courseCode.trim();
+    instituteCode = instituteCode.trim();
 
-    // ✅ 2. Check if already applied
-    const alreadyApplied = student.appliedInstitutes.find(
-      i => i.instituteCode === instituteCode
-    );
+    // 3️⃣ Find student (case-insensitive)
+    const student = await Student.findOne({
+      studentID: { $regex: `^${actualStudentID}$`, $options: "i" }
+    });
+    if (!student) return res.status(404).json({ success: false, message: "Student not found" });
 
-    if (alreadyApplied) {
-      return res.status(400).json({ success: false, message: "Already applied to this institute" });
-    }
+    // 4️⃣ Find course (optional)
+    let course = null;
+    if (courseCode) {
+      // Note: Make sure the Course model actually uses 'code' in its schema
+      course = await Courses.findOne({ code: { $regex: `^${courseCode}$`, $options: "i" } });
+      if (!course) return res.status(404).json({ success: false, message: "Course not found" });
+    }
 
-    // ✅ 3. Push the new institute with valid enum status
-    student.appliedInstitutes.push({
-      instituteCode,
-      status: "PENDING", // Must match enum exactly
+    // 5️⃣ Find institute (Querying 'instituteId' field instead of 'code')
+    const institute = await Institute.findOne({ 
+      instituteId: { $regex: `^${instituteCode}$`, $options: "i" } 
+    });
+    if (!institute) return res.status(404).json({ success: false, message: "Institute not found" });
+
+    // 6️⃣ Update main student fields
+    student.courseId = course ? course._id : null;
+    student.instituteId = institute._id;
+
+    // 7️⃣ Add to appliedInstitutes array (if not already applied)
+    const alreadyApplied = student.appliedInstitutes.some(
+      (app) => app.instituteId.toString() === institute._id.toString()
+    );
+
+    if (!alreadyApplied) {
+      student.appliedInstitutes.push({
+        instituteCode: institute.instituteId, // Mapping correct field from DB
+        instituteId: institute._id,
+        status: "PENDING"
+      });
+    }
+
+    // 8️⃣ Save
+    await student.save();
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Applied to institute successfully", 
+      student 
     });
 
-    await student.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Request sent to institute successfully",
-      appliedInstitute: {
-        instituteCode,
-        status: "PENDING"
-      }
-    });
-
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
+
+
+
+
 
 
 
