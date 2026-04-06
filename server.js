@@ -32,12 +32,11 @@ mongoose.connect(process.env.MONGO_URI)
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
-app.use(
-  cors({
-    origin: "*",
-    credentials: true
-  })
-);
+app.use(cors({
+  origin: "*", // ya specific frontend URL
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type"]
+}));
 
 // const allowedOrigins = [
 //   "*"
