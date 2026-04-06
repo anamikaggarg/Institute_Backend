@@ -491,20 +491,57 @@ router.get("/myCourse/:studentID", async (req, res) => {
   }
 });
 // req send to ins
+// router.post("/apply-institute", async (req, res) => {
+//   try {
+//     const { instituteCode, studentId } = req.body;
+   
+
+//     // ✅ FIRST: student find
+//     const student = await Student.findOne({ studentID: studentId });
+
+//     if (!student) {
+//       return res.status(404).json({ message: "Student not found" });
+//     }
+
+//     // ✅ THEN: use student
+//     const alreadyApplied = student.appliedInstitutes.find(
+//       i => i.instituteCode === instituteCode
+//     );
+
+//     if (alreadyApplied) {
+//       return res.status(400).json({
+//         message: "Already applied to this institute",
+//       });
+//     }
+
+//     // rest code...
+    
+//     res.json({ message: " req send to institute" });
+
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+
 router.post("/apply-institute", async (req, res) => {
   try {
     const { instituteCode, studentId } = req.body;
-    const Institute = require("../model/Institute");
 
-    // ✅ FIRST: student find
-    const student = await Student.findOne({ studentID: studentId });
+    const student = await Student.findById(studentId);
 
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    // ✅ THEN: use student
-    const alreadyApplied = student.appliedInstitutes.find(
+    const institute = await Institute.findOne({ instituteId: instituteCode });
+
+    if (!institute) {
+      return res.status(404).json({ message: "Institute not found" });
+    }
+
+    // Already applied check
+    const alreadyApplied = student.appliedInstitutes?.find(
       i => i.instituteCode === instituteCode
     );
 
@@ -514,11 +551,30 @@ router.post("/apply-institute", async (req, res) => {
       });
     }
 
-    // rest code...
-    
-    res.json({ message: " req send to institute" });
+    // Push student side
+    student.appliedInstitutes.push({
+      instituteCode,
+      status: "pending",
+    });
+
+    await student.save();
+
+    // Push institute side
+    institute.requestedStudents.push({
+      studentId,
+      name: student.fullName,
+      status: "pending",
+    });
+
+    await institute.save();
+
+    res.json({
+      success: true,
+      message: "Request sent to institute",
+    });
 
   } catch (err) {
+    console.log(err); // 👈 ADD THIS
     res.status(500).json({ error: err.message });
   }
 });
