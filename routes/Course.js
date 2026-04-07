@@ -189,47 +189,50 @@ router.get("/all", async (req, res) => {
   }
 });
 
-
-
 router.get("/course/:courseId", async (req, res) => {
   try {
-    const course = await Courses.findOne({ courseId: req.params.courseId }).populate("classTeacher");
+    // Fetch course and populate classTeacher
+    const course = await Courses.findOne({ courseId: req.params.courseId })
+      .populate("classTeacher") // make sure classTeacher is ObjectId ref
+      .lean(); // lean() gives plain JS object, easier to manipulate
 
-    if (!course) 
+    if (!course) {
       return res.status(404).json({ success: false, message: "Course not found" });
+    }
 
-    // MongoId remove karke clean response
+    // Build clean course response
     const courseData = {
       courseId: course.courseId,
-      instituteId: course.instituteId, // string
+      instituteId: course.instituteId || null,
       name: course.name,
-      students: course.students,
-      status: course.status,
-      duration: course.duration,
+      students: course.students || [],
+      status: course.status || null,
+      duration: course.duration || null,
       classTeacher: course.classTeacher
         ? {
-            id: course.classTeacher._id.toString(), // optional, sirf reference chahiye toh hata bhi sakte ho
-            firstName: course.classTeacher.firstName,
-            lastName: course.classTeacher.LastName,
-            email: course.classTeacher.Email
+            id: course.classTeacher._id?.toString() || null,
+            firstName: course.classTeacher.firstName || null,
+            lastName: course.classTeacher.lastName || null,
+            email: course.classTeacher.email || null
           }
         : null,
-      progress: course.progress,
-      maxSeats: course.maxSeats,
-      nextBatch: course.nextBatch,
-      description: course.description,
-      subjects: course.subjects,
-      enrolledStudents: course.enrolledStudents.map(s => ({
-        studentId: s.studentId,
-        name: s.name,
-        status: s.status,
-        appliedAt: s.appliedAt
+      progress: course.progress || 0,
+      maxSeats: course.maxSeats || 0,
+      nextBatch: course.nextBatch || null,
+      description: course.description || "",
+      subjects: course.subjects || [],
+      enrolledStudents: (course.enrolledStudents || []).map((s) => ({
+        studentId: s.studentId || null,
+        name: s.name || null,
+        status: s.status || null,
+        appliedAt: s.appliedAt || null
       })),
-      createdAt: course.createdAt
+      createdAt: course.createdAt || null
     };
 
     res.status(200).json({ success: true, course: courseData });
   } catch (error) {
+    console.error("Error fetching course:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
