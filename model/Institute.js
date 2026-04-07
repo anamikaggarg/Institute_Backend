@@ -83,6 +83,12 @@ const instituteSchema = new mongoose.Schema({
     }
   }
 ],
+courses: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Courses"
+  }
+],
 
   otp: {
   type: Number

@@ -4,17 +4,80 @@ const Courses = require("../model/courseModal");
 const Student = require("../model/Student");
 const verifyInstituteToken = require("../middleware/auth");
 
+
+// router.post("/create", async (req, res) => {
+//   try {
+
+//     // const instituteId = req.session.instituteId; // ✅ SESSION SE
+
+//     // if (!instituteId) {
+//     //   return res.status(401).json({
+//     //     success: false,
+//     //     message: "Login required ❌"
+//     //   });
+//     // }
+
+//     const generateCourseId = async () => {
+//       let uniqueId;
+//       let exists = true;
+
+//       while (exists) {
+//         const randomNumber = Math.floor(10000 + Math.random() * 90000);
+//         uniqueId = `COURSE-${randomNumber}`;
+//         exists = await Courses.findOne({ courseId: uniqueId });
+//       }
+//       return uniqueId;
+//     };
+
+//     const generateSubjectId = () => {
+//       return `SUB-${Math.floor(1000 + Math.random() * 9000)}`;
+//     };
+
+//     const courseId = await generateCourseId();
+
+//     let subjectsWithId = [];
+
+//     if (req.body.subjects && req.body.subjects.length > 0) {
+//       subjectsWithId = req.body.subjects.map((sub) => ({
+//         subjectId: generateSubjectId(),
+//         name: sub.name || sub,
+//         subjectTeacher: []
+//       }));
+//     }
+
+//     const newCourse = new Courses({
+//       ...req.body,
+//       courseId,
+//       instituteId,
+//       subjects: subjectsWithId
+//     });
+
+//     await newCourse.save();
+
+//     // 🔥 institute me push
+//     await Institute.findOneAndUpdate(
+//       { instituteId: instituteId },
+//       { $push: { courses: newCourse._id } }
+//     );
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Course created successfully ✅",
+//       course: newCourse
+//     });
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({
+//       success: false,
+//       message: error.message
+//     });
+//   }
+// });
+
 router.post("/create", async (req, res) => {
   try {
-    // const instituteId = req.session.instituteId; // ✅ session se
 
-    // if (!instituteId) {
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: "Login required"
-    //   });
-    // }
-    // ✅ Generate Course ID
     const generateCourseId = async () => {
       let uniqueId;
       let exists = true;
@@ -27,124 +90,45 @@ router.post("/create", async (req, res) => {
       return uniqueId;
     };
 
-    // ✅ Generate Subject ID
     const generateSubjectId = () => {
       return `SUB-${Math.floor(1000 + Math.random() * 9000)}`;
     };
 
     const courseId = await generateCourseId();
 
-    // ✅ Subjects ko modify karna (agar aaye hain)
     let subjectsWithId = [];
 
     if (req.body.subjects && req.body.subjects.length > 0) {
       subjectsWithId = req.body.subjects.map((sub) => ({
         subjectId: generateSubjectId(),
-        name: sub.name || sub, // string bhi handle karega
-        teacher: null // default
+        name: sub.name || sub,
+        subjectTeacher: [] // ✅ array rakho
       }));
     }
 
     const newCourse = new Courses({
       ...req.body,
       courseId,
-      subjects: subjectsWithId,
-      instituteId
+      subjects: subjectsWithId
+      // ❌ instituteId hata diya
     });
 
     await newCourse.save();
 
     res.status(201).json({
       success: true,
-      message: "Course created successfully",
+      message: "Course created successfully ✅",
       course: newCourse
     });
 
   } catch (error) {
+    console.error("CREATE ERROR:", error);
     res.status(500).json({
       success: false,
       message: error.message
     });
   }
 });
-// router.post("/create", async (req, res) => {
-//   try {
-//     const {
-//       name, students, status, classTeacher, 
-//       duration, progress, maxSeats, nextBatch, description, subjects
-//     } = req.body;
-
-//     const generateCourseId = async () => {
-//       let uniqueId;
-//       let exists = true;
-//       while (exists) {
-//         const randomNumber = Math.floor(10000 + Math.random() * 90000);
-//         uniqueId = `COURSE-${randomNumber}`;
-//         exists = await Courses.findOne({ courseId: uniqueId });
-//       }
-//       return uniqueId;
-//     };
-
-//     const courseId = await generateCourseId();
-
-//     const newCourse = new Courses({
-//       courseId, name, students, status, classTeacher,
-//       duration, progress, maxSeats, nextBatch, description, subjects,
-     
-
-//     });
-
-//     await newCourse.save();
-//     res.status(201).json({ success: true, message: "Course created successfully", course: newCourse });
-//   } catch (error) {
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// });
-
-
-
-// GET /courses/all
-// router.get("/all", async (req, res) => {
-//   try {
-//     const courses = await Courses.find().sort({ createdAt: -1 });
-
-//     if (courses.length === 0) {
-//       return res.status(404).json({ message: "No courses found" });
-//     }
-
-//     // MongoId fields ko remove karke sirf relevant info bhejna
-//     const courseData = courses.map(course => ({
-//       courseId: course.courseId,
-//       instituteId: course.instituteId, // string
-//       name: course.name,
-//       students: course.students,
-//       status: course.status,
-//       duration: course.duration,
-//       classTeacher: course.classTeacher, // agar populate nahi karna hai toh id bhi chalega
-//       progress: course.progress,
-//       maxSeats: course.maxSeats,
-//       nextBatch: course.nextBatch,
-//       description: course.description,
-//       subjects: course.subjects,
-//       enrolledStudents: course.enrolledStudents.map(s => ({
-//         studentId: s.studentId,
-//         name: s.name,
-//         status: s.status,
-//         appliedAt: s.appliedAt
-//       })),
-//       createdAt: course.createdAt
-//     }));
-    
-
-//     res.status(200).json({
-//       success: true,
-//       courses: courseData
-//     });
-
-//   } catch (error) {
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// });
 
 router.get("/all", async (req, res) => {
   try {
@@ -181,7 +165,7 @@ router.get("/all", async (req, res) => {
       description: course.description,
       subjects: course.subjects,
 
-      // 🔥 FIX HERE
+      
       enrolledStudents: (course.enrolledStudents || []).map(s => ({
         studentId: s.studentId,
         name: s.name,
