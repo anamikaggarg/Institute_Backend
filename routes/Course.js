@@ -113,6 +113,8 @@ router.get("/all", async (req, res) => {
       courses: courseData
     });
 
+
+    
   } catch (error) {
     res.status(500).json({
       success: false,

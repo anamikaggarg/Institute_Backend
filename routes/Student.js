@@ -36,7 +36,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       password,
       dob,
       contactNo,
-      instituteId, // 👈 this is INS-xxxx
+      instituteId, 
       address,
       parentName,
       parentContactNo,
@@ -44,14 +44,13 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       parentRelation,
     } = req.body;
 
-    // ✅ validation
+    
     if (!fullName || !email || !password || !dob) {
       return res.status(400).json({
         message: "Required fields missing",
       });
     }
 
-    // ✅ check existing email
     const existingStudent = await Student.findOne({ email });
     if (existingStudent) {
       return res.status(409).json({
@@ -373,18 +372,47 @@ router.post("/login", async (req, res) => {
 });
 
 // Get institute by studentid
+// router.get("/studentsByInstitute/:instituteId", async (req, res) => {
+//   try {
+//     const { instituteId } = req.params;
+
+//     const students = await Student.find({
+//       instituteId: instituteId
+//     });
+
+//     if (students.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "No students found for this institute"
+//       });
+//     }
+
+//     res.json({
+//       success: true,
+//       count: students.length,
+//       students
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
 router.get("/studentsByInstitute/:instituteId", async (req, res) => {
   try {
     const { instituteId } = req.params;
 
+    // UPDATE: Array ke andar 'instituteCode' matching students dhoondo
     const students = await Student.find({
-      instituteId: instituteId
+      "appliedInstitutes.instituteCode": instituteId
     });
 
-    if (students.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No students found for this institute"
+    // 404 mat bhejo agar list khali hai, bas empty array bhej do 
+    // taaki frontend crash na ho aur "No students" dikhaye
+    if (!students || students.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No students found",
+        students: []
       });
     }
 
@@ -618,6 +646,8 @@ router.get("/myCourse/:studentID", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+
 
 router.post("/apply-institute", async (req, res) => {
    try {

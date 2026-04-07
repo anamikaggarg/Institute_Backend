@@ -571,6 +571,26 @@ router.put("/approveStudent", async (req, res) => {
   }
 });
 
+router.get("/pending-students/:instituteId", async (req, res) => {
+  try {
+    const { instituteId } = req.params;
+
+    // Aise students dhundo jinke 'appliedInstitutes' array mein 
+    // ye instituteId ho aur status 'PENDING' ho
+    const pendingStudents = await Student.find({
+      appliedInstitutes: {
+        $elemMatch: {
+          instituteCode: instituteId, // Agar aap code use kar rahe hain
+          status: "PENDING"
+        }
+      }
+    });
+
+    res.json({ success: true, students: pendingStudents });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 router.post("/logout", (req, res) => {
   try {
     if (!req.session) {
