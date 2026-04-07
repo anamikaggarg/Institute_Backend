@@ -188,51 +188,53 @@ router.get("/all", async (req, res) => {
     });
   }
 });
-
 router.get("/course/:courseId", async (req, res) => {
   try {
-    // Fetch course and populate classTeacher
     const course = await Courses.findOne({ courseId: req.params.courseId })
-      .populate("classTeacher") // make sure classTeacher is ObjectId ref
-      .lean(); // lean() gives plain JS object, easier to manipulate
+      .populate("classTeacher"); // populate teacher reference
 
-    if (!course) {
+    if (!course) 
       return res.status(404).json({ success: false, message: "Course not found" });
-    }
 
-    // Build clean course response
+    // Clean JSON for frontend
     const courseData = {
       courseId: course.courseId,
-      instituteId: course.instituteId || null,
+      instituteId: course.instituteId,
       name: course.name,
-      students: course.students || [],
-      status: course.status || null,
-      duration: course.duration || null,
+      students: course.students,
+      status: course.status,
+      duration: course.duration,
       classTeacher: course.classTeacher
         ? {
-            id: course.classTeacher._id?.toString() || null,
-            firstName: course.classTeacher.firstName || null,
-            lastName: course.classTeacher.lastName || null,
-            email: course.classTeacher.email || null
+            staffId: course.classTeacher.staffId,
+            firstName: course.classTeacher.firstName,
+            LastName: course.classTeacher.LastName,
+            Email: course.classTeacher.Email,
           }
         : null,
-      progress: course.progress || 0,
-      maxSeats: course.maxSeats || 0,
-      nextBatch: course.nextBatch || null,
-      description: course.description || "",
-      subjects: course.subjects || [],
-      enrolledStudents: (course.enrolledStudents || []).map((s) => ({
-        studentId: s.studentId || null,
-        name: s.name || null,
-        status: s.status || null,
-        appliedAt: s.appliedAt || null
+      progress: course.progress,
+      maxSeats: course.maxSeats,
+      nextBatch: course.nextBatch,
+      description: course.description,
+      subjects: course.subjects.map((s) => ({
+        subjectId: s.subjectId || s._id.toString(),
+        name: s.name || s,           // fallback if just string
+        status: s.status || "active",
+        subjectTeacher: s.subjectTeacher || null,
+        students: s.students || [],
       })),
-      createdAt: course.createdAt || null
+      enrolledStudents: course.enrolledStudents.map((s) => ({
+        studentId: s.studentId,
+        name: s.name,
+        status: s.status,
+        appliedAt: s.appliedAt,
+      })),
+      createdAt: course.createdAt,
     };
 
     res.status(200).json({ success: true, course: courseData });
   } catch (error) {
-    console.error("Error fetching course:", error);
+    console.error("Course fetch error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
