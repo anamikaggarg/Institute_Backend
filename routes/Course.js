@@ -121,58 +121,53 @@ router.get("/all", async (req, res) => {
   }
 });
 
-
-
 router.get("/course/:courseId", async (req, res) => {
   try {
-    const course = await Courses.findOne({ courseId: req.params.courseId }).populate("classTeacher");
+    // 1. POPULATE HATA DEIN (Kyunki aap STAFF-ID string save kar rahe hain, ObjectId nahi)
+    const course = await Courses.findOne({ courseId: req.params.courseId });
 
-    if (!course) 
+    if (!course) {
       return res.status(404).json({ success: false, message: "Course not found" });
+    }
 
-    // MongoId remove karke clean response
+    // 2. DATA MAPPING (Subjects aur Teachers ko safely handle karein)
     const courseData = {
-      courseId: course.courseId,
-      instituteId: course.instituteId, // string
-      name: course.name,
-      students: course.students,
-      status: course.status,
-      duration: course.duration,
-      classTeacher: course.classTeacher
-        ? {
-            id: course.classTeacher._id.toString(), // optional, sirf reference chahiye toh hata bhi sakte ho
-            firstName: course.classTeacher.firstName,
-            lastName: course.classTeacher.LastName,
-            email: course.classTeacher.Email
-          }
-        : null,
-      progress: course.progress,
-      maxSeats: course.maxSeats,
-      nextBatch: course.nextBatch,
-      description: course.description,
-      subjects: course.subjects,
-      enrolledStudents: course.enrolledStudents.map(s => ({
+      ...course._doc,
+      
+      // Agar classTeacher array hai toh pehla element dikhao, warna direct string
+      displayTeacher: Array.isArray(course.classTeacher) 
+        ? course.classTeacher[0] 
+        : course.classTeacher,
+
+      // Subjects array ko ensure karein
+      subjects: course.subjects || [],
+
+      enrolledStudents: (course.enrolledStudents || []).map(s => ({
         studentId: s.studentId,
         name: s.name,
         status: s.status,
         appliedAt: s.appliedAt
-      })),
-      createdAt: course.createdAt
+      }))
     };
 
+    // 3. SUCCESS RESPONSE
     res.status(200).json({ success: true, course: courseData });
+
   } catch (error) {
+    console.error("GET COURSE ERROR:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
 
 // GET /courses/institute/:instituteId
+
+
 router.get("/institute/:instituteId", async (req, res) => {
   try {
     const { instituteId } = req.params;
 
-    // Courses fetch kar rahe instituteId ke basis pe
+    // Courses fetch kar rahe instituteId ke basis pe          
     const courses = await Courses.find({ instituteId }).populate("classTeacher").sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, courses });
