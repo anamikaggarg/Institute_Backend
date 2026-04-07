@@ -9,7 +9,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sendOtp = require('../utils/sendOtp');
 
-// const otpHandler = require("../routes/otpRoutes");
+
 
 
 
@@ -28,10 +28,6 @@ const upload = multer({ storage });
 
 
 // router.use("/otp", otpHandler(Student));
-
-
-
-
 router.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
     const {
@@ -40,24 +36,55 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       password,
       dob,
       contactNo,
-      instituteName,
-      instituteId,
+      instituteId, // 👈 this is INS-xxxx
       address,
-      status,
       parentName,
       parentContactNo,
       parentOccupation,
-      parentRelation
+      parentRelation,
     } = req.body;
 
+    // ✅ validation
+    if (!fullName || !email || !password || !dob) {
+      return res.status(400).json({
+        message: "Required fields missing",
+      });
+    }
+
+    // ✅ check existing email
+    const existingStudent = await Student.findOne({ email });
+    if (existingStudent) {
+      return res.status(409).json({
+        message: "Student already exists",
+      });
+    }
+
+    // ✅ find institute using instituteCode
+    let institute = null;
+
+    if (instituteId) {
+      institute = await Institute.findOne({
+        instituteCode: instituteId, // 🔥 FIXED HERE
+      });
+
+      if (!institute) {
+        return res.status(404).json({
+          message: "Institute not found",
+        });
+      }
+    }
+
+    // ✅ generate student ID
     const generateStudentId = async () => {
       let uniqueId;
       let exists = true;
+      let attempts = 0;
 
-      while (exists) {
-        const randomNumber = Math.floor(10000 + Math.random() * 9000);
-        uniqueId = `STU-${randomNumber}`;
+      while (exists && attempts < 10) {
+        const num = Math.floor(10000 + Math.random() * 90000);
+        uniqueId = `STU-${num}`;
         exists = await Student.findOne({ studentID: uniqueId });
+        attempts++;
       }
 
       return uniqueId;
@@ -65,16 +92,10 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
 
     const studentID = await generateStudentId();
 
-    const existingStudent = await Student.findOne({ email });
-
-    if (existingStudent) {
-      return res.status(409).json({
-        message: "Student already registered with this email",
-      });
-    }
-
+    // ✅ hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // ✅ create student
     const newStudent = new Student({
       studentID,
       fullName,
@@ -82,11 +103,9 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       password: hashedPassword,
       dob,
       contactNo,
-      instituteId,
-   
-      instituteName,
+      instituteId: institute ? institute._id : null, // ✅ store ObjectId
+      instituteName: institute ? institute.name : null,
       address,
-      status,
       parent: {
         name: parentName,
         contactNo: parentContactNo,
@@ -94,21 +113,102 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
         relation: parentRelation,
       },
       profileImage: req.file ? req.file.filename : null,
-       approvalStatus: "PENDING",
-      courseId: null
     });
 
     await newStudent.save();
 
     res.status(201).json({
       success: true,
-      message: "Student successfully registered",
-      student: newStudent,
+      message: "Student registered successfully",
+      data: newStudent,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 });
+
+
+// router.post("/register", upload.single("profileImage"), async (req, res) => {
+//   try {
+//     const {
+//       fullName,
+//       email,
+//       password,
+//       dob,
+//       contactNo,
+//       instituteName,
+//       instituteId,
+//       address,
+//       status,
+//       parentName,
+//       parentContactNo,
+//       parentOccupation,
+//       parentRelation
+//     } = req.body;
+
+//     const generateStudentId = async () => {
+//       let uniqueId;
+//       let exists = true;
+
+//       while (exists) {
+//         const randomNumber = Math.floor(10000 + Math.random() * 9000);
+//         uniqueId = `STU-${randomNumber}`;
+//         exists = await Student.findOne({ studentID: uniqueId });
+//       }
+
+//       return uniqueId;
+//     };
+
+//     const studentID = await generateStudentId();
+
+//     const existingStudent = await Student.findOne({ email });
+
+//     if (existingStudent) {
+//       return res.status(409).json({
+//         message: "Student already registered with this email",
+//       });
+//     }
+
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     const newStudent = new Student({
+//       studentID,
+//       fullName,
+//       email,
+//       password: hashedPassword,
+//       dob,
+//       contactNo,
+//       instituteId,
+   
+//       instituteName,
+//       address,
+//       status,
+//       parent: {
+//         name: parentName,
+//         contactNo: parentContactNo,
+//         occupation: parentOccupation,
+//         relation: parentRelation,
+//       },
+//       profileImage: req.file ? req.file.filename : null,
+//        approvalStatus: "PENDING",
+//       courseId: null
+//     });
+
+//     await newStudent.save();
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Student successfully registered",
+//       student: newStudent,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
 
 router.post("/forget-password", async (req, res) => {
   const { email } = req.body;
@@ -269,6 +369,33 @@ router.post("/login", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Get institute by studentid
+router.get("/studentsByInstitute/:instituteId", async (req, res) => {
+  try {
+    const { instituteId } = req.params;
+
+    const students = await Student.find({
+      instituteId: instituteId
+    });
+
+    if (students.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No students found for this institute"
+      });
+    }
+
+    res.json({
+      success: true,
+      count: students.length,
+      students
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -452,6 +579,7 @@ router.put("/updateStudent/:studentID", async (req, res) => {
   }
 });
 
+
 // to show course of that student
 router.get("/myCourse/:studentID", async (req, res) => {
   try {
@@ -490,16 +618,10 @@ router.get("/myCourse/:studentID", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-// req send to ins
-// Apply to an institute
 
-
-// POST /student/apply-institute
-// POST /student/apply-institute
-// POST /student/apply-institute
 router.post("/apply-institute", async (req, res) => {
    try {
- // 1️⃣ Grab variables (Handles both 'studentId' and 'studentID')
+ 
    let { studentID, studentId, courseCode, instituteCode } = req.body;
    let actualStudentID = studentID || studentId;
 

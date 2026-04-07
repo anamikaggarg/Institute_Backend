@@ -47,7 +47,7 @@ const courseSchema = new mongoose.Schema({
 
    instituteId: {   
     type: String,
-    required: true
+  
   },
 
 

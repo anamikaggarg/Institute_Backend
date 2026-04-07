@@ -6,6 +6,7 @@ const path = require('path');
 const multer = require('multer');
 const jwt = require("jsonwebtoken");
 const sendOtp = require("../utils/sendOtp");
+const Student = require("../model/Student")
 // const Staff = require("../model/Staff"); 
 
 
@@ -509,6 +510,66 @@ router.post("/verify-otp", async (req, res) => {
  
    res.json({ success: true, message: "Password reset successfully" });
  });
+
+
+router.put("/approveStudent", async (req, res) => {
+  try {
+    const { studentId, instituteId } = req.body; // studentId: "STU-18378", instituteId: "INST-10729"
+
+    // 1. Find Student
+    const studentData = await Student.findOne({ studentID: studentId });
+    if (!studentData) return res.status(404).json({ success: false, message: "Student not found" });
+
+
+    const institute = await Institute.findOne({ 
+      instituteId: { $regex: `^${instituteId.trim()}$`, $options: "i" } 
+    });
+    
+    if (!institute) {
+      return res.status(404).json({ success: false, message: "Institute not found with this code" });
+    }
+
+    // 3. Find the application in student's array
+    // Hum check karenge ki kya student ke array mein is institute ki ID ya code hai
+    const appliedIndex = studentData.appliedInstitutes.findIndex(
+      (item) => 
+        item.instituteId.toString() === institute._id.toString() || 
+        item.instituteCode === instituteId
+    );
+
+    if (appliedIndex === -1) {
+      return res.status(400).json({ success: false, message: "Application not found in student record" });
+    }
+
+    // 4. Update Status logic
+    studentData.appliedInstitutes.forEach((app, index) => {
+      if (index === appliedIndex) {
+        app.status = "APPROVED";
+      } else if (app.status === "PENDING") {
+        app.status = "REJECTED";
+      }
+    });
+
+    // Student ka main institute link update karein
+    studentData.instituteId = institute._id;
+    await studentData.save();
+
+    // 5. Update Institute's Student List
+    await Institute.findOneAndUpdate(
+      { _id: institute._id },
+      {
+        $addToSet: { students: { studentId: studentId, status: "APPROVED" } },
+        $inc: { numberOfStudents: 1 }
+      }
+    );
+
+    res.json({ success: true, message: "Student approved successfully!" });
+
+  } catch (error) {
+    console.error("Approve Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 router.post("/logout", (req, res) => {
   try {

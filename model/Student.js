@@ -42,7 +42,6 @@ const studentSchema = new mongoose.Schema(
 
     instituteName: {
       type: String,
-      required: true,
     },
 
     courseId: {
@@ -50,18 +49,15 @@ const studentSchema = new mongoose.Schema(
   ref: "Course",
   default: null
 },
-
-instituteId: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Institute",
-  required: true
+ instituteId: {
+  type: String,
+  default: null
 },
 
     
-  appliedInstitutes: [
+ appliedInstitutes: [
   {
-    instituteCode: String,
-    instituteId: { type: mongoose.Schema.Types.ObjectId, ref: "Institute" }, // ✅ store ObjectId
+    instituteId: String,   
     status: {
       type: String,
       enum: ["PENDING", "APPROVED", "REJECTED"],

@@ -67,6 +67,22 @@ const instituteSchema = new mongoose.Schema({
       idCard: { type: Boolean, default: false }
     }
   },
+  students: [
+  {
+    studentId: {
+      type: String
+    },
+    status: {
+      type: String,
+      enum: ["PENDING", "APPROVED", "REJECTED"],
+      default: "APPROVED"
+    },
+    approvedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }
+],
 
   otp: {
   type: Number
