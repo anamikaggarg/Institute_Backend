@@ -5,76 +5,6 @@ const Student = require("../model/Student");
 const verifyInstituteToken = require("../middleware/auth");
 
 
-// router.post("/create", async (req, res) => {
-//   try {
-
-//     // const instituteId = req.session.instituteId; // ✅ SESSION SE
-
-//     // if (!instituteId) {
-//     //   return res.status(401).json({
-//     //     success: false,
-//     //     message: "Login required ❌"
-//     //   });
-//     // }
-
-//     const generateCourseId = async () => {
-//       let uniqueId;
-//       let exists = true;
-
-//       while (exists) {
-//         const randomNumber = Math.floor(10000 + Math.random() * 90000);
-//         uniqueId = `COURSE-${randomNumber}`;
-//         exists = await Courses.findOne({ courseId: uniqueId });
-//       }
-//       return uniqueId;
-//     };
-
-//     const generateSubjectId = () => {
-//       return `SUB-${Math.floor(1000 + Math.random() * 9000)}`;
-//     };
-
-//     const courseId = await generateCourseId();
-
-//     let subjectsWithId = [];
-
-//     if (req.body.subjects && req.body.subjects.length > 0) {
-//       subjectsWithId = req.body.subjects.map((sub) => ({
-//         subjectId: generateSubjectId(),
-//         name: sub.name || sub,
-//         subjectTeacher: []
-//       }));
-//     }
-
-//     const newCourse = new Courses({
-//       ...req.body,
-//       courseId,
-//       instituteId,
-//       subjects: subjectsWithId
-//     });
-
-//     await newCourse.save();
-
-//     // 🔥 institute me push
-//     await Institute.findOneAndUpdate(
-//       { instituteId: instituteId },
-//       { $push: { courses: newCourse._id } }
-//     );
-
-//     res.status(201).json({
-//       success: true,
-//       message: "Course created successfully ✅",
-//       course: newCourse
-//     });
-
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({
-//       success: false,
-//       message: error.message
-//     });
-//   }
-// });
-
 router.post("/create", async (req, res) => {
   try {
 
@@ -129,6 +59,8 @@ router.post("/create", async (req, res) => {
     });
   }
 });
+
+
 
 router.get("/all", async (req, res) => {
   try {
@@ -188,53 +120,48 @@ router.get("/all", async (req, res) => {
     });
   }
 });
+
+
+
 router.get("/course/:courseId", async (req, res) => {
   try {
-    const course = await Courses.findOne({ courseId: req.params.courseId })
-      .populate("classTeacher"); // populate teacher reference
+    const course = await Courses.findOne({ courseId: req.params.courseId }).populate("classTeacher");
 
     if (!course) 
       return res.status(404).json({ success: false, message: "Course not found" });
 
-    // Clean JSON for frontend
+    // MongoId remove karke clean response
     const courseData = {
       courseId: course.courseId,
-      instituteId: course.instituteId,
+      instituteId: course.instituteId, // string
       name: course.name,
       students: course.students,
       status: course.status,
       duration: course.duration,
       classTeacher: course.classTeacher
         ? {
-            staffId: course.classTeacher.staffId,
+            id: course.classTeacher._id.toString(), // optional, sirf reference chahiye toh hata bhi sakte ho
             firstName: course.classTeacher.firstName,
-            LastName: course.classTeacher.LastName,
-            Email: course.classTeacher.Email,
+            lastName: course.classTeacher.LastName,
+            email: course.classTeacher.Email
           }
         : null,
       progress: course.progress,
       maxSeats: course.maxSeats,
       nextBatch: course.nextBatch,
       description: course.description,
-      subjects: course.subjects.map((s) => ({
-        subjectId: s.subjectId || s._id.toString(),
-        name: s.name || s,           // fallback if just string
-        status: s.status || "active",
-        subjectTeacher: s.subjectTeacher || null,
-        students: s.students || [],
-      })),
-      enrolledStudents: course.enrolledStudents.map((s) => ({
+      subjects: course.subjects,
+      enrolledStudents: course.enrolledStudents.map(s => ({
         studentId: s.studentId,
         name: s.name,
         status: s.status,
-        appliedAt: s.appliedAt,
+        appliedAt: s.appliedAt
       })),
-      createdAt: course.createdAt,
+      createdAt: course.createdAt
     };
 
     res.status(200).json({ success: true, course: courseData });
   } catch (error) {
-    console.error("Course fetch error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
