@@ -226,166 +226,166 @@ const verifyToken = (req,res,next) =>{
 }
 
 
-// router.post("/login", async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     const institute = await Institute.findOne({
-//       email: { $regex: `^${email}$`, $options: "i" }
-//     });
-
-
-//     if (!institute) {
-//       return res.status(404).json({
-//         message: "Institute not found",
-//         success: false
-//       });
-//     }
-
-//     const passwordMatch = await bcrypt.compare(password, institute.password);
-
-//     if (!passwordMatch) {
-//       return res.status(401).json({
-//         message: "Invalid password",
-//         success: false
-//       });
-//     }
-
-//     const token = jwt.sign(
-//       {
-//         instituteId: institute.instituteId,
-//         email: institute.email
-//       },
-//       process.env.JWT_SECRET,
-//       { expiresIn: "24h" }
-//     );
-
-//     req.session.token = token;
-//        req.session.instituteId = institute.instituteId;
-// console.log("SESSION AFTER LOGIN:", req.session);
-//     res.status(200).json({
-//       message: "Login successfully",
-//       success: true,
-//       token: token,
-//       institute: institute
-//     });
-
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    let user = null;
-    let role = "";
-
-   
     const institute = await Institute.findOne({
       email: { $regex: `^${email}$`, $options: "i" }
     });
 
-    if (institute) {
-      const passwordMatch = await bcrypt.compare(
-        password,
-        institute.password
-      );
 
-      if (!passwordMatch) {
-        return res.status(401).json({
-          success: false,
-          message: "Invalid password"
-        });
-      }
-
-      role = "institute";
-      user = institute;
-
-      const token = jwt.sign(
-        {
-          instituteId: institute.instituteId,
-          email: institute.email,
-          role: role
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "24h" }
-      );
-
-      req.session.token = token;
-      req.session.instituteId = institute.instituteId;
-      req.session.role = role;
-
-      return res.status(200).json({
-        success: true,
-        message: "Institute login successfully",
-        token,
-        role,
-        user
+    if (!institute) {
+      return res.status(404).json({
+        message: "Institute not found",
+        success: false
       });
     }
 
-    // =========================
-    // 2. CHECK STAFF
-    // =========================
-    const staff = await Staff.findOne({
-      Email: { $regex: `^${email}$`, $options: "i" }
-    });
+    const passwordMatch = await bcrypt.compare(password, institute.password);
 
-    if (staff) {
-      const passwordMatch = await bcrypt.compare(
-        password,
-        staff.password
-      );
-
-      if (!passwordMatch) {
-        return res.status(401).json({
-          success: false,
-          message: "Invalid password"
-        });
-      }
-
-      role = "staff";
-      user = staff;
-
-      const token = jwt.sign(
-        {
-          staffId: staff.staffId,
-          email: staff.Email,
-          role: role
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "24h" }
-      );
-
-      req.session.token = token;
-      req.session.staffId = staff.staffId;
-      req.session.role = role;
-
-      return res.status(200).json({
-        success: true,
-        message: "Staff login successfully",
-        token,
-        role,
-        user
+    if (!passwordMatch) {
+      return res.status(401).json({
+        message: "Invalid password",
+        success: false
       });
     }
 
-   
-    return res.status(404).json({
-      success: false,
-      message: "User not found"
+    const token = jwt.sign(
+      {
+        instituteId: institute.instituteId,
+        email: institute.email
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
+    req.session.token = token;
+       req.session.instituteId = institute.instituteId;
+console.log("SESSION AFTER LOGIN:", req.session);
+    res.status(200).json({
+      message: "Login successfully",
+      success: true,
+      token: token,
+      institute: institute
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    res.status(500).json({ error: error.message });
   }
 });
+
+
+// router.post("/login", async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     let user = null;
+//     let role = "";
+
+   
+//     const institute = await Institute.findOne({
+//       email: { $regex: `^${email}$`, $options: "i" }
+//     });
+
+//     if (institute) {
+//       const passwordMatch = await bcrypt.compare(
+//         password,
+//         institute.password
+//       );
+
+//       if (!passwordMatch) {
+//         return res.status(401).json({
+//           success: false,
+//           message: "Invalid password"
+//         });
+//       }
+
+//       role = "institute";
+//       user = institute;
+
+//       const token = jwt.sign(
+//         {
+//           instituteId: institute.instituteId,
+//           email: institute.email,
+//           role: role
+//         },
+//         process.env.JWT_SECRET,
+//         { expiresIn: "24h" }
+//       );
+
+//       req.session.token = token;
+//       req.session.instituteId = institute.instituteId;
+//       req.session.role = role;
+
+//       return res.status(200).json({
+//         success: true,
+//         message: "Institute login successfully",
+//         token,
+//         role,
+//         user
+//       });
+//     }
+
+//     // =========================
+//     // 2. CHECK STAFF
+//     // =========================
+//     const staff = await Staff.findOne({
+//       Email: { $regex: `^${email}$`, $options: "i" }
+//     });
+
+//     if (staff) {
+//       const passwordMatch = await bcrypt.compare(
+//         password,
+//         staff.password
+//       );
+
+//       if (!passwordMatch) {
+//         return res.status(401).json({
+//           success: false,
+//           message: "Invalid password"
+//         });
+//       }
+
+//       role = "staff";
+//       user = staff;
+
+//       const token = jwt.sign(
+//         {
+//           staffId: staff.staffId,
+//           email: staff.Email,
+//           role: role
+//         },
+//         process.env.JWT_SECRET,
+//         { expiresIn: "24h" }
+//       );
+
+//       req.session.token = token;
+//       req.session.staffId = staff.staffId;
+//       req.session.role = role;
+
+//       return res.status(200).json({
+//         success: true,
+//         message: "Staff login successfully",
+//         token,
+//         role,
+//         user
+//       });
+//     }
+
+   
+//     return res.status(404).json({
+//       success: false,
+//       message: "User not found"
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       error: error.message
+//     });
+//   }
+// });
 
 
 
