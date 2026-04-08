@@ -706,58 +706,254 @@ router.get("/myCourse/:studentID", async (req, res) => {
 //     res.status(500).json({ success: false, error: error.message });
 //   }
 // });
+
+// router.post("/apply-institute", async (req, res) => {
+//   try {
+//     let { studentID, instituteCode } = req.body;
+
+//     if (!studentID || !instituteCode) {
+//       return res.status(400).json({ success: false, message: "studentID and instituteCode are required" });
+//     }
+
+//     // 1. Student ko uski ID se dhoondo (e.g. STU-13412)
+//     const student = await Student.findOne({ studentID: studentID.trim() });
+//     if (!student) return res.status(404).json({ success: false, message: "Student not found" });
+
+//     // 2. Institute ko uske Code se dhoondo (e.g. INS-18211)
+//     const institute = await Institute.findOne({ instituteId: instituteCode.trim() });
+//     if (!institute) return res.status(404).json({ success: false, message: "Institute not found" });
+
+//     // 3. Double Check: Kahin ye bacha pehle se applied toh nahi?
+//     // Hum Code aur ID dono se check karenge taaki koi loop-hole na rahe
+//     const alreadyApplied = student.appliedInstitutes.some(
+//       (app) => 
+//         app.instituteCode === institute.instituteId || 
+//         app.instituteId?.toString() === institute._id.toString()
+//     );
+
+//     if (alreadyApplied) {
+//       return res.status(400).json({ success: false, message: "Already applied to this institute" });
+//     }
+
+//     // 4. Sabse Important Step: Dono cheezein Push karo!
+//     student.appliedInstitutes.push({
+//       instituteCode: institute.instituteId, // "INS-18211" (String)
+//       instituteId: institute.instituteId,           // "69b6f6..." (ObjectId)
+//       status: "PENDING"
+//     });
+
+//     // 5. Student ke main level par bhi backup ke liye code daal do
+//     student.instituteId = institute.instituteId;
+
+//     await student.save();
+
+//     res.status(200).json({ 
+//       success: true, 
+//       message: "Applied successfully!.", 
+//       student 
+//     });
+
+//   } catch (error) {
+//     console.error("Apply Error:", error);
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// });
+
+// router.get("/institute-status/:studentID", async (req, res) => {
+//   try {
+//     const { studentID } = req.params;
+
+//     const student = await Student.findOne({ studentID });
+
+//     if (!student) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Student not found",
+//       });
+//     }
+
+//     // =========================
+//     // APPROVED / SELECTED INSTITUTE
+//     // =========================
+//     if (student.instituteId) {
+//       const institute = await Institute.findOne({
+//         instituteId: student.instituteId, // because string stored
+//       });
+
+//       if (institute) {
+//         return res.status(200).json({
+//           success: true,
+//           status: "approved",
+//           instituteName: institute.name,
+//           instituteCity: institute.city,
+//           instituteLogo: institute.logo,
+//         });
+//       }
+//     }
+
+//     // =========================
+//     // PENDING CHECK
+//     // =========================
+//     const pendingInstituteData = student.appliedInstitutes.find(
+//       (app) => app.status === "PENDING"
+//     );
+
+//     if (pendingInstituteData) {
+//       const institute = await Institute.findById(
+//         pendingInstituteData.instituteId
+//       );
+
+//       if (institute) {
+//         return res.status(200).json({
+//           success: true,
+//           status: "pending",
+//           instituteName: institute.name,
+//           instituteCity: institute.city,
+//           instituteLogo: institute.logo,
+//         });
+//       }
+//     }
+
+//     // =========================
+//     // NONE
+//     // =========================
+//     return res.status(200).json({
+//       success: true,
+//       status: "none",
+//       instituteName: null,
+//     });
+
+//   } catch (error) {
+//     console.error(error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// });
 router.post("/apply-institute", async (req, res) => {
   try {
-    let { studentID, instituteCode } = req.body;
+    const { studentID, instituteCode } = req.body;
 
     if (!studentID || !instituteCode) {
-      return res.status(400).json({ success: false, message: "studentID and instituteCode are required" });
+      return res.status(400).json({
+        success: false,
+        message: "studentID and instituteCode required",
+      });
     }
 
-    // 1. Student ko uski ID se dhoondo (e.g. STU-13412)
-    const student = await Student.findOne({ studentID: studentID.trim() });
-    if (!student) return res.status(404).json({ success: false, message: "Student not found" });
+    const student = await Student.findOne({ studentID });
 
-    // 2. Institute ko uske Code se dhoondo (e.g. INS-18211)
-    const institute = await Institute.findOne({ instituteId: instituteCode.trim() });
-    if (!institute) return res.status(404).json({ success: false, message: "Institute not found" });
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
 
-    // 3. Double Check: Kahin ye bacha pehle se applied toh nahi?
-    // Hum Code aur ID dono se check karenge taaki koi loop-hole na rahe
+    const institute = await Institute.findOne({
+      instituteId: instituteCode,
+    });
+
+    if (!institute) {
+      return res.status(404).json({
+        success: false,
+        message: "Institute not found",
+      });
+    }
+
     const alreadyApplied = student.appliedInstitutes.some(
-      (app) => 
-        app.instituteCode === institute.instituteId || 
-        app.instituteId?.toString() === institute._id.toString()
+      (app) => app.instituteId === instituteCode
     );
 
     if (alreadyApplied) {
-      return res.status(400).json({ success: false, message: "Already applied to this institute" });
+      return res.status(400).json({
+        success: false,
+        message: "Already applied",
+      });
     }
 
-    // 4. Sabse Important Step: Dono cheezein Push karo!
     student.appliedInstitutes.push({
-      instituteCode: institute.instituteId, // "INS-18211" (String)
-      instituteId: institute._id,           // "69b6f6..." (ObjectId)
-      status: "PENDING"
+      instituteId: instituteCode,
+      status: "PENDING",
     });
-
-    // 5. Student ke main level par bhi backup ke liye code daal do
-    student.instituteId = institute.instituteId;
 
     await student.save();
 
-    res.status(200).json({ 
-      success: true, 
-      message: "Applied successfully! Ab ye INS-18211 par dikhega.", 
-      student 
+    res.status(200).json({
+      success: true,
+      message: "Applied Successfully",
     });
 
   } catch (error) {
-    console.error("Apply Error:", error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 });
 
+router.get("/institute-status/:studentID", async (req, res) => {
+  try {
+    const student = await Student.findOne({
+      studentID: req.params.studentID,
+    });
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    // APPROVED CASE
+    if (student.instituteId) {
+      const institute = await Institute.findOne({
+        instituteId: student.instituteId,
+      });
+
+      return res.status(200).json({
+        success: true,
+        status: "approved",
+        instituteName: institute?.name,
+        instituteCode: institute?.instituteId,
+      });
+    }
+
+    // PENDING CASE
+    const pending = student.appliedInstitutes.find(
+      (app) => app.status === "PENDING"
+    );
+
+    if (pending) {
+      const institute = await Institute.findOne({
+        instituteId: pending.instituteId,
+      });
+
+      return res.status(200).json({
+        success: true,
+        status: "pending",
+        instituteName: institute?.name,
+        instituteCode: institute?.instituteId,
+      });
+    }
+
+    // NONE CASE
+    return res.status(200).json({
+      success: true,
+      status: "none",
+      instituteName: null,
+      instituteCode: null,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
 
 
 

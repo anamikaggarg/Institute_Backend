@@ -511,38 +511,44 @@ router.post("/verify-otp", async (req, res) => {
    res.json({ success: true, message: "Password reset successfully" });
  });
 
-
 router.put("/approveStudent", async (req, res) => {
   try {
-    const { studentId, instituteId } = req.body; // studentId: "STU-18378", instituteId: "INST-10729"
+    const { studentId, instituteId } = req.body;
 
-    // 1. Find Student
-    const studentData = await Student.findOne({ studentID: studentId });
-    if (!studentData) return res.status(404).json({ success: false, message: "Student not found" });
-
-
-    const institute = await Institute.findOne({ 
-      instituteId: { $regex: `^${instituteId.trim()}$`, $options: "i" } 
+    const student = await Student.findOne({
+      studentID: studentId,
     });
-    
-    if (!institute) {
-      return res.status(404).json({ success: false, message: "Institute not found with this code" });
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
     }
 
-    // 3. Find the application in student's array
-    // Hum check karenge ki kya student ke array mein is institute ki ID ya code hai
-    const appliedIndex = studentData.appliedInstitutes.findIndex(
-      (item) => 
-        item.instituteId.toString() === institute._id.toString() || 
-        item.instituteCode === instituteId
+    const institute = await Institute.findOne({
+      instituteId,
+    });
+
+    if (!institute) {
+      return res.status(404).json({
+        success: false,
+        message: "Institute not found",
+      });
+    }
+
+    const appliedIndex = student.appliedInstitutes.findIndex(
+      (item) => item.instituteId === instituteId
     );
 
     if (appliedIndex === -1) {
-      return res.status(400).json({ success: false, message: "Application not found in student record" });
+      return res.status(400).json({
+        success: false,
+        message: "Application not found",
+      });
     }
 
-    // 4. Update Status logic
-    studentData.appliedInstitutes.forEach((app, index) => {
+    student.appliedInstitutes.forEach((app, index) => {
       if (index === appliedIndex) {
         app.status = "APPROVED";
       } else if (app.status === "PENDING") {
@@ -550,24 +556,34 @@ router.put("/approveStudent", async (req, res) => {
       }
     });
 
-    // Student ka main institute link update karein
-    studentData.instituteId = institute._id;
-    await studentData.save();
+    student.instituteId = instituteId;
+    student.approvalStatus = "APPROVED";
 
-    // 5. Update Institute's Student List
+    await student.save();
+
     await Institute.findOneAndUpdate(
-      { _id: institute._id },
+      { instituteId },
       {
-        $addToSet: { students: { studentId: studentId, status: "APPROVED" } },
-        $inc: { numberOfStudents: 1 }
+        $addToSet: {
+          students: {
+            studentId,
+            status: "APPROVED",
+          },
+        },
+        $inc: { numberOfStudents: 1 },
       }
     );
 
-    res.json({ success: true, message: "Student approved successfully!" });
+    res.status(200).json({
+      success: true,
+      message: "Approved Successfully",
+    });
 
   } catch (error) {
-    console.error("Approve Error:", error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 });
 
