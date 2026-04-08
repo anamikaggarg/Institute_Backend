@@ -10,8 +10,16 @@ const staffSchema = new mongoose.Schema({
   middleName: { type: String },
   LastName: { type: String },
   EmployeeId: { type: String, required: true, unique: true },
-  // UserRole: { type: String, required: true },
+
   Email: { type: String },
+   password: {            
+    type: String,
+    
+  },
+  role: {
+  type: String,
+  default: "staff"
+},
   ContactNumber: { type: String, required: true },
   Gender: { type: String },
   Dob: { type: String }, 

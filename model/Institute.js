@@ -83,6 +83,10 @@ const instituteSchema = new mongoose.Schema({
     }
   }
 ],
+role: {
+  type: String,
+  default: "institute"
+},
 courses: [
   {
     type: mongoose.Schema.Types.ObjectId,

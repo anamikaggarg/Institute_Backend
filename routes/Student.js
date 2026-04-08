@@ -11,8 +11,6 @@ const sendOtp = require('../utils/sendOtp');
 
 
 
-
-
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -632,6 +630,47 @@ router.get("/myCourse/:studentID", async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+
+// to see approvved student 
+router.get("/my-courses/:studentId", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const courses = await Courses.find({
+      "enrolledStudents.studentId": studentId
+    }).lean();
+
+    if (!courses.length) {
+      return res.json({
+        success: true,
+        courses: []
+      });
+    }
+
+    const result = courses.map(course => {
+      const student = course.enrolledStudents.find(
+        s => s.studentId === studentId
+      );
+
+      return {
+        ...course,
+        status: student?.status === "APPROVED" ? "approved" : "pending"
+      };
+    });
+
+    res.json({
+      success: true,
+      courses: result
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 });
 

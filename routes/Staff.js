@@ -324,19 +324,19 @@ router.put("/approveStudent", async (req, res) => {
   try {
     const { studentId, courseId } = req.body;
 
-    // ✅ correct model name
+   
     const Student = await student.findOne({ studentID: studentId });
 
     if (!Student) {
       return res.json({ success: false, message: "Student not found" });
     }
 
-    // ✅ update student
+    
     Student.approvalStatus = "APPROVED";
     Student.courseId = courseId;
     await Student.save();
 
-    // ✅ correct model name
+    
     await course.findOneAndUpdate(
       {
         courseId: courseId,
