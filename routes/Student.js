@@ -91,10 +91,10 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
 
     const studentID = await generateStudentId();
 
-    // ✅ hash password
+   
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ create student
+   
     const newStudent = new Student({
       studentID,
       fullName,
@@ -119,7 +119,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Student registered successfully",
-      data: newStudent,
+      student: newStudent,
     });
   } catch (error) {
     console.error(error);
@@ -397,31 +397,19 @@ router.post("/login", async (req, res) => {
 //     res.status(500).json({ error: error.message });
 //   }
 // });
-router.get("/studentsByInstitute/:instituteId", async (req, res) => {
+router.get("/studentsByInstitute/:id", async (req, res) => {
   try {
-    const { instituteId } = req.params;
+    const { id } = req.params; // Ye id 'INS-18211' bhi ho sakti hai aur MongoDB wali ID bhi
 
-    // UPDATE: Array ke andar 'instituteCode' matching students dhoondo
     const students = await Student.find({
-      "appliedInstitutes.instituteCode": instituteId
+      $or: [
+        { "appliedInstitutes.instituteCode": id },
+        { "appliedInstitutes.instituteId": id },
+        { "instituteId": id }
+      ]
     });
 
-    // 404 mat bhejo agar list khali hai, bas empty array bhej do 
-    // taaki frontend crash na ho aur "No students" dikhaye
-    if (!students || students.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: "No students found",
-        students: []
-      });
-    }
-
-    res.json({
-      success: true,
-      count: students.length,
-      students
-    });
-
+    res.json({ success: true, count: students.length, students });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -649,77 +637,126 @@ router.get("/myCourse/:studentID", async (req, res) => {
 
 
 
-router.post("/apply-institute", async (req, res) => {
-   try {
+// router.post("/apply-institute", async (req, res) => {
+//    try {
  
-   let { studentID, studentId, courseCode, instituteCode } = req.body;
-   let actualStudentID = studentID || studentId;
+//    let { studentID, studentId, courseCode, instituteCode } = req.body;
+//    let actualStudentID = studentID || studentId;
 
-   if (!actualStudentID || !instituteCode) {
-   return res.status(400).json({ 
-   success: false, 
-   message: "studentId and instituteCode are required" 
-   });
-   }
+//    if (!actualStudentID || !instituteCode) {
+//    return res.status(400).json({ 
+//    success: false, 
+//    message: "studentId and instituteCode are required" 
+//    });
+//    }
 
-    // 2️⃣ Clean inputs
-    actualStudentID = actualStudentID.trim();
-    if (courseCode) courseCode = courseCode.trim();
-    instituteCode = instituteCode.trim();
+//     // 2️⃣ Clean inputs
+//     actualStudentID = actualStudentID.trim();
+//     if (courseCode) courseCode = courseCode.trim();
+//     instituteCode = instituteCode.trim();
 
-    // 3️⃣ Find student (case-insensitive)
-    const student = await Student.findOne({
-      studentID: { $regex: `^${actualStudentID}$`, $options: "i" }
-    });
-    if (!student) return res.status(404).json({ success: false, message: "Student not found" });
+//     // 3️⃣ Find student (case-insensitive)
+//     const student = await Student.findOne({
+//       studentID: { $regex: `^${actualStudentID}$`, $options: "i" }
+//     });
+//     if (!student) return res.status(404).json({ success: false, message: "Student not found" });
 
-    // 4️⃣ Find course (optional)
-    let course = null;
-    if (courseCode) {
-      // Note: Make sure the Course model actually uses 'code' in its schema
-      course = await Courses.findOne({ code: { $regex: `^${courseCode}$`, $options: "i" } });
-      if (!course) return res.status(404).json({ success: false, message: "Course not found" });
-    }
+//     // 4️⃣ Find course (optional)
+//     let course = null;
+//     if (courseCode) {
+//       // Note: Make sure the Course model actually uses 'code' in its schema
+//       course = await Courses.findOne({ code: { $regex: `^${courseCode}$`, $options: "i" } });
+//       if (!course) return res.status(404).json({ success: false, message: "Course not found" });
+//     }
 
-    // 5️⃣ Find institute (Querying 'instituteId' field instead of 'code')
-    const institute = await Institute.findOne({ 
-      instituteId: { $regex: `^${instituteCode}$`, $options: "i" } 
+//     // 5️⃣ Find institute (Querying 'instituteId' field instead of 'code')
+//     const institute = await Institute.findOne({ 
+//       instituteId: { $regex: `^${instituteCode}$`, $options: "i" } 
+//     });
+//     if (!institute) return res.status(404).json({ success: false, message: "Institute not found" });
+
+//     // 6️⃣ Update main student fields
+//     student.courseId = course ? course._id : null;
+//     student.instituteId = institute._id;
+
+//     // 7️⃣ Add to appliedInstitutes array (if not already applied)
+//     const alreadyApplied = student.appliedInstitutes.some(
+//       (app) => app.instituteId.toString() === institute._id.toString()
+//     );
+
+//     if (!alreadyApplied) {
+//       student.appliedInstitutes.push({
+//         instituteCode: institute.instituteId, // Mapping correct field from DB
+//         instituteId: institute._id,
+//         status: "PENDING"
+//       });
+//     }
+
+//     // 8️⃣ Save
+//     await student.save();
+
+//     res.status(200).json({ 
+//       success: true, 
+//       message: "Applied to institute successfully", 
+//       student 
+//     });
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// });
+router.post("/apply-institute", async (req, res) => {
+  try {
+    let { studentID, instituteCode } = req.body;
+
+    if (!studentID || !instituteCode) {
+      return res.status(400).json({ success: false, message: "studentID and instituteCode are required" });
+    }
+
+    // 1. Student ko uski ID se dhoondo (e.g. STU-13412)
+    const student = await Student.findOne({ studentID: studentID.trim() });
+    if (!student) return res.status(404).json({ success: false, message: "Student not found" });
+
+    // 2. Institute ko uske Code se dhoondo (e.g. INS-18211)
+    const institute = await Institute.findOne({ instituteId: instituteCode.trim() });
+    if (!institute) return res.status(404).json({ success: false, message: "Institute not found" });
+
+    // 3. Double Check: Kahin ye bacha pehle se applied toh nahi?
+    // Hum Code aur ID dono se check karenge taaki koi loop-hole na rahe
+    const alreadyApplied = student.appliedInstitutes.some(
+      (app) => 
+        app.instituteCode === institute.instituteId || 
+        app.instituteId?.toString() === institute._id.toString()
+    );
+
+    if (alreadyApplied) {
+      return res.status(400).json({ success: false, message: "Already applied to this institute" });
+    }
+
+    // 4. Sabse Important Step: Dono cheezein Push karo!
+    student.appliedInstitutes.push({
+      instituteCode: institute.instituteId, // "INS-18211" (String)
+      instituteId: institute._id,           // "69b6f6..." (ObjectId)
+      status: "PENDING"
     });
-    if (!institute) return res.status(404).json({ success: false, message: "Institute not found" });
 
-    // 6️⃣ Update main student fields
-    student.courseId = course ? course._id : null;
-    student.instituteId = institute._id;
+    // 5. Student ke main level par bhi backup ke liye code daal do
+    student.instituteId = institute.instituteId;
 
-    // 7️⃣ Add to appliedInstitutes array (if not already applied)
-    const alreadyApplied = student.appliedInstitutes.some(
-      (app) => app.instituteId.toString() === institute._id.toString()
-    );
-
-    if (!alreadyApplied) {
-      student.appliedInstitutes.push({
-        instituteCode: institute.instituteId, // Mapping correct field from DB
-        instituteId: institute._id,
-        status: "PENDING"
-      });
-    }
-
-    // 8️⃣ Save
-    await student.save();
+    await student.save();
 
     res.status(200).json({ 
       success: true, 
-      message: "Applied to institute successfully", 
+      message: "Applied successfully! Ab ye INS-18211 par dikhega.", 
       student 
     });
 
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+  } catch (error) {
+    console.error("Apply Error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
-
-
 
 
 
