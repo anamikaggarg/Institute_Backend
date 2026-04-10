@@ -26,7 +26,7 @@ const staffSchema = new mongoose.Schema({
 
   UserRole: {
   type: String,
-  required: true,
+  
   enum: ["Teacher", "Receptionist", "Accountant"],
   default: "student"
 },
@@ -57,7 +57,6 @@ assignedClasses:[
   BankAccountNumber: { type: String },
   IFSC: { type: String },
   AccountHolder: { type: String },
-
  
   experience: [
     {

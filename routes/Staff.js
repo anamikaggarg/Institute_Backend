@@ -22,110 +22,110 @@ const generateStaffId = async () => {
   return uniqueId;
 };
 
-
-
-// router.post("/addStaff", async (req, res) => {    
-//   try {
-//     const { email, password, name } = req.body;
-//     const inInstitute = await Institute.findOne({ email: { $regex: `^${email}$`, $options: "i" } });
-//     if (inInstitute) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Email already registered as Institute. Cannot add as Staff."
-//       });
-//     }
-
-
-//     const inStaff = await Staff.findOne({ email: { $regex: `^${email}$`, $options: "i" } });
-//     if (inStaff) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Email already registered as Staff."
-//       });
-//     }
-
-  
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     const newStaff = new Staff({
-//       email,
-//       password: hashedPassword,
-//       name,
-//       ...req.body // map any other fields from frontend
-//     });
-
-//     await newStaff.save();
-
-//     res.status(201).json({
-//       success: true,
-//       message: "Staff member added successfully",
-//       staff: newStaff
-//     });
-//   } catch (error) {
-//     console.error("Error adding staff:", error);
-//     res.status(500).json({
-//       success: false,
-//       error: error.message
-//     });
-//   }
-// });
-
-router.post("/addStaff", async (req, res) => {    
+router.post("/addStaff", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const {
+      firstName,
+      middleName,
+      LastName,
+      EmployeeId,
+      Email,
+      password,
+      ContactNumber,
+      Gender,
+      Dob,
+      UserRole,
+      assignedClasses,
+      JobTitle,
+      Designation,
+      Department,
+      EmploymentType,
+      AppointmentDate,
+      AadharNumber,
+      PANNumber,
+      FatherName,
+      MotherName,
+      Religion,
+      Category,
+      MaritalStatus,
+      SpouseName,
+      EmergencyContact,
+      BankName,
+      BankAccountNumber,
+      IFSC,
+      AccountHolder,
+      experience
+    } = req.body;
 
-    // ✅ check institute
-    const inInstitute = await Institute.findOne({
-      email: { $regex: `^${email}$`, $options: "i" }
-    });
+    // Check duplicate employee
+    const existingStaff = await Staff.findOne({ EmployeeId });
 
-    if (inInstitute) {
+    if (existingStaff) {
       return res.status(400).json({
         success: false,
-        message: "Email already registered as Institute"
+        message: "Employee ID already exists"
       });
     }
 
-    // ✅ check staff
-    const inStaff = await Staff.findOne({
-      Email: { $regex: `^${email}$`, $options: "i" }
-    });
-
-    if (inStaff) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already registered as Staff"
-      });
-    }
-
-    // 🔥 STEP 1: Generate staffId
-    const staffId = await generateStaffId();
-
-    // 🔥 STEP 2: hash password
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 🔥 STEP 3: create staff (IMPORTANT LINE)
+    // Auto Generate Staff ID
+    const staffCount = await Staff.countDocuments();
+    const staffId = `STAFF${1000 + staffCount + 1}`;
+
     const newStaff = new Staff({
-      ...req.body,
+      staffId,
+      firstName,
+      middleName,
+      LastName,
+      EmployeeId,
+      Email,
       password: hashedPassword,
-      staffId: staffId   // 👈 yaha assign karo
+      ContactNumber,
+      Gender,
+      Dob,
+      UserRole,
+      assignedClasses,
+      JobTitle,
+      Designation,
+      Department,
+      EmploymentType,
+      AppointmentDate,
+      AadharNumber,
+      PANNumber,
+      FatherName,
+      MotherName,
+      Religion,
+      Category,
+      MaritalStatus,
+      SpouseName,
+      EmergencyContact,
+      BankName,
+      BankAccountNumber,
+      IFSC,
+      AccountHolder,
+      experience
     });
 
     await newStaff.save();
 
     res.status(201).json({
       success: true,
-      message: "Staff member added successfully",
-      staff: newStaff
+      message: "Staff Created Successfully",
+      data: newStaff
     });
 
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error.message
+      message: error.message
     });
   }
 });
+
+
+
 router.get("/allStaff", async (req, res) => {
   try {
     const staff = await Staff.find().sort({ createdAt: -1 });
